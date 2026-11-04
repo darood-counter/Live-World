@@ -1,0 +1,33 @@
+DRIVERLINK FIXED FILES
+
+1. Keep your existing Firebase project configuration file at:
+   js/firebase.js
+   The file must export `auth` and `db` as named exports. Do not replace its Firebase config with placeholders.
+
+2. Upload the contents of this folder to your existing website, preserving these paths:
+   index.html
+   css/main.css
+   js/app.js
+   js/firebase.js (your existing file)
+
+3. Firebase Console > Firestore Database > Rules:
+   Replace the current rules with the contents of firestore.rules and click Publish.
+
+4. Firebase Console > Authentication > Sign-in method:
+   Enable Email/Password. Email verification is not requested by this app.
+
+5. Location sharing requires HTTPS and the driver's browser/device location permission. The driver must tap Go Live. Go Offline removes the presence document. The map hides a driver's marker if GPS updates stop for more than 90 seconds.
+
+6. Existing Firestore data is not deleted by these files. The app uses these collections:
+   users/{uid}          private account details
+   publicProfiles/{uid} public driver profile (no email/phone)
+   presence/{uid}       live GPS while online
+   chats/{chatId}       two-person conversations
+   chats/{chatId}/messages/{messageId}
+   blocks/{ownerUid_blockedUid}
+   reports/{reportId}
+
+IMPORTANT:
+- This version intentionally has no Partnership page, Change Partnership, or Lock New Partner feature.
+- Exact GPS coordinates are readable by signed-in users while a driver is Live. Share only if the driver consents.
+- For production, consider adding server-side cleanup for old presence documents. Old markers are already hidden client-side after 90 seconds without an update.
