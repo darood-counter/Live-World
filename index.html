@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#123b2a">
+  <meta name="description" content="Live World — connect with people around the world.">
+  <title>Live World — Account</title>
+  <link rel="stylesheet" href="./css/main.css">
+  <script type="module" src="./js/app.js"></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="brand">
+      <div class="brand-mark" aria-hidden="true">LW</div>
+      <div><h1>LIVE WORLD</h1><p>Connect • Explore • Chat</p></div>
+    </header>
+
+    <section id="auth-view" class="panel">
+      <div class="tabs" role="tablist" aria-label="Account">
+        <button class="tab active" id="login-tab" type="button">Login</button>
+        <button class="tab" id="signup-tab" type="button">Create account</button>
+      </div>
+
+      <form id="login-form" class="form">
+        <h2>Welcome back</h2>
+        <p class="muted">Sign in to your Live World account.</p>
+        <label>Email<input id="login-email" type="email" autocomplete="email" required></label>
+        <label>Password<input id="login-password" type="password" autocomplete="current-password" minlength="8" required></label>
+        <button class="primary" type="submit">Login</button>
+        <button class="text-button" id="forgot-button" type="button">Forgot password?</button>
+      </form>
+
+      <form id="signup-form" class="form hidden">
+        <h2>Create your account</h2>
+        <p class="muted">Join people around the world.</p>
+        <label>Full name<input id="signup-name" type="text" autocomplete="name" maxlength="60" required></label>
+        <label>Email<input id="signup-email" type="email" autocomplete="email" required></label>
+        <label>Mobile number <span class="muted">(optional)</span><input id="signup-phone" type="tel" autocomplete="tel" maxlength="25"></label>
+        <label>Password<input id="signup-password" type="password" autocomplete="new-password" minlength="8" required></label>
+        <label>Confirm password<input id="signup-confirm" type="password" autocomplete="new-password" minlength="8" required></label>
+        <label class="check"><input id="terms" type="checkbox" required> I agree to the Terms and Privacy Policy.</label>
+        <button class="primary" type="submit">Create account</button>
+      </form>
+      <div id="auth-message" class="message" role="status" aria-live="polite"></div>
+    </section>
+
+    <section id="profile-view" class="panel hidden">
+      <div class="profile-head">
+        <div class="avatar" id="avatar">LW</div>
+        <div><h2 id="profile-name">Your profile</h2><p class="muted" id="profile-email"></p></div>
+      </div>
+      <div class="user-id"><span class="muted">Your Live World ID</span><strong id="profile-uid"></strong></div>
+      <form id="profile-form" class="form">
+        <label>Display name<input id="edit-name" type="text" maxlength="60" required></label>
+        <label>Mobile number<input id="edit-phone" type="tel" maxlength="25"></label>
+        <label>Country<input id="edit-country" type="text" maxlength="60" placeholder="e.g. United Arab Emirates"></label>
+        <label>City<input id="edit-city" type="text" maxlength="60" placeholder="e.g. Dubai"></label>
+        <label>About you<input id="edit-bio" type="text" maxlength="160" placeholder="A short introduction"></label>
+        <button class="primary" type="submit">Save profile</button>
+      </form>
+      <div class="profile-actions">
+        <button class="secondary" id="verify-button" type="button">Send verification email</button>
+        <button class="danger" id="logout-button" type="button">Logout</button>
+      </div>
+      <div id="profile-message" class="message" role="status" aria-live="polite"></div>
+    </section>
+    <footer>© <span id="year"></span> Live World. Location sharing is not enabled in Phase 1.</footer>
+  </main>
+</body>
+</html>
