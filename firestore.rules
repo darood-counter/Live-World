@@ -3,10 +3,13 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
     function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+    function chatPath(chatId) {
+      return /databases/$(database)/documents/chats/$(chatId);
+    }
     function isChatMember(chatId) {
       return signedIn()
-        && exists(/databases/$(database)/documents/chats/$(chatId))
-        && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members;
+        && exists(chatPath(chatId))
+        && request.auth.uid in get(chatPath(chatId)).data.members;
     }
 
     // Private account data: only the account owner can access it.
@@ -14,7 +17,7 @@ service cloud.firestore {
       allow read, create, update, delete: if isOwner(uid);
     }
 
-    // Public driver card data. Do not put email or phone number here.
+    // Public driver profile: never store private email or phone here.
     match /publicProfiles/{uid} {
       allow read: if signedIn();
       allow create, update: if isOwner(uid)
@@ -23,7 +26,7 @@ service cloud.firestore {
       allow delete: if isOwner(uid);
     }
 
-    // Exact GPS is readable only by signed-in users and writable only by that driver.
+    // Signed-in drivers can see live drivers; each driver writes only their own presence.
     match /presence/{uid} {
       allow read: if signedIn();
       allow create, update: if isOwner(uid)
@@ -38,9 +41,12 @@ service cloud.firestore {
       allow delete: if isOwner(uid);
     }
 
-    // A conversation can only be accessed by its two members.
+    // Allow signed-in users to check whether a deterministic chat ID exists,
+    // but only members can read an existing conversation.
     match /chats/{chatId} {
-      allow read: if signedIn() && request.auth.uid in resource.data.members;
+      allow get: if signedIn()
+        && (!exists(chatPath(chatId)) || request.auth.uid in resource.data.members);
+      allow list: if signedIn() && request.auth.uid in resource.data.members;
       allow create: if signedIn()
         && request.resource.data.members is list
         && request.resource.data.members.size() == 2
@@ -64,9 +70,11 @@ service cloud.firestore {
       }
     }
 
-    // A user can manage only blocks they created.
+    // A driver can see block records where they are either party, enabling
+    // the chat UI to respect blocks without exposing unrelated block records.
     match /blocks/{blockId} {
-      allow read: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      allow read: if signedIn()
+        && (resource.data.ownerUid == request.auth.uid || resource.data.blockedUid == request.auth.uid);
       allow create: if signedIn()
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.blockedUid is string
@@ -74,7 +82,6 @@ service cloud.firestore {
       allow update, delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
     }
 
-    // Reports may be submitted by a signed-in user; reports are not readable by members.
     match /reports/{reportId} {
       allow create: if signedIn()
         && request.resource.data.reporterUid == request.auth.uid
@@ -85,7 +92,6 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
-    // Everything else is denied unless explicitly allowed above.
     match /{document=**} {
       allow read, write: if false;
     }
