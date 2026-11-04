@@ -2,26 +2,61 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
-    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
-
-    match /users/{uid} {
-      allow create: if isOwner(uid)
-        && request.resource.data.uid == uid
-        && request.resource.data.email == request.auth.token.email
-        && request.resource.data.keys().hasOnly([
-          'uid','userId','name','email','phone','country','city','bio',
-          'photoURL','createdAt','updatedAt','profileComplete','accountStatus'
-        ]);
-      allow read: if isOwner(uid);
-      allow update: if isOwner(uid)
-        && request.resource.data.uid == resource.data.uid
-        && request.resource.data.email == resource.data.email
-        && request.resource.data.userId == resource.data.userId
-        && request.resource.data.accountStatus == resource.data.accountStatus
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'name','phone','country','city','bio','photoURL','updatedAt'
-        ]);
-      allow delete: if false;
+    function owns(uid) { return signedIn() && request.auth.uid == uid; }
+    function member(chatId) {
+      return signedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members;
     }
+    match /users/{uid} {
+      allow create: if owns(uid) && request.resource.data.uid == uid
+        && request.resource.data.phone is string && request.resource.data.phone.size() >= 8;
+      allow read, update, delete: if owns(uid);
+    }
+    match /publicProfiles/{uid} {
+      allow read: if signedIn();
+      allow create, update: if owns(uid)
+        && request.resource.data.keys().hasOnly(['uid','userId','name','city','bio','photoURL','updatedAt'])
+        && request.resource.data.uid == uid;
+      allow delete: if owns(uid);
+    }
+    match /presence/{uid} {
+      allow read: if signedIn();
+      allow create, update: if owns(uid)
+        && request.resource.data.keys().hasOnly(['uid','name','city','lat','lng','sharing','updatedAt'])
+        && request.resource.data.uid == uid
+        && request.resource.data.sharing == true
+        && request.resource.data.lat is number && request.resource.data.lng is number;
+      allow delete: if owns(uid);
+    }
+    match /chats/{chatId} {
+      allow read: if signedIn() && request.auth.uid in resource.data.members;
+      allow create: if signedIn() && request.resource.data.members is list
+        && request.resource.data.members.size() == 2
+        && request.auth.uid in request.resource.data.members;
+      allow update: if signedIn() && request.auth.uid in resource.data.members
+        && request.resource.data.members == resource.data.members;
+      allow delete: if false;
+      match /messages/{messageId} {
+        allow read: if member(chatId);
+        allow create: if member(chatId)
+          && request.resource.data.senderUid == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 2000;
+        allow update, delete: if false;
+      }
+    }
+    match /blocks/{blockId} {
+      allow read: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.blockedUid is string;
+      allow delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      allow update: if false;
+    }
+    match /reports/{reportId} {
+      allow create: if signedIn() && request.resource.data.reporterUid == request.auth.uid
+        && request.resource.data.reason is string && request.resource.data.reason.size() <= 500;
+      allow read, update, delete: if false;
+    }
+    match /{document=**} { allow read, write: if false; }
   }
 }
