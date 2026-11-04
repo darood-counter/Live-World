@@ -1,3 +1,4 @@
+// Public Firebase web configuration. Protect data with Firebase Security Rules.
 export const firebaseConfig = {
   apiKey: "AIzaSyDPE0pan5XMgOXwAs4ZOI-bcqMkXn0l31Q",
   authDomain: "live-world-16cdd.firebaseapp.com",

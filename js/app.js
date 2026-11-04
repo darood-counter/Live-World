@@ -1,141 +1,35 @@
-import { auth, db, firebaseReady } from "./firebase.js";
-import {
-  createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged,
-  updateProfile, sendEmailVerification, sendPasswordResetEmail, signOut
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {
-  doc, getDoc, setDoc, serverTimestamp, updateDoc
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-
-const $ = id => document.getElementById(id);
-const authView = $("auth-view"), profileView = $("profile-view");
-$("year").textContent = new Date().getFullYear();
-
-function message(id, text, error=false) {
-  const el=$(id); el.textContent=text; el.classList.toggle("error",error);
-}
-function initials(name="LW") {
-  return name.trim().split(/\s+/).slice(0,2).map(x=>x[0]||"").join("").toUpperCase() || "LW";
-}
-function showLogin() { authView.classList.remove("hidden"); profileView.classList.add("hidden"); }
-function showProfile() { authView.classList.add("hidden"); profileView.classList.remove("hidden"); }
-function friendlyError(err) {
-  const map = {
-    "auth/email-already-in-use":"This email is already registered.",
-    "auth/invalid-email":"Please enter a valid email address.",
-    "auth/invalid-credential":"Email or password is incorrect.",
-    "auth/user-not-found":"No account was found for this email.",
-    "auth/wrong-password":"Email or password is incorrect.",
-    "auth/weak-password":"Please use a stronger password (at least 8 characters).",
-    "auth/too-many-requests":"Too many attempts. Please try again later.",
-    "auth/network-request-failed":"Network error. Check your internet connection.",
-    "auth/operation-not-allowed":"Enable Email/Password sign-in in Firebase Authentication."
-  };
-  return map[err.code] || err.message || "Something went wrong.";
-}
-function setBusy(form, busy) {
-  const btn=form.querySelector('button[type="submit"]');
-  if(btn){if(!btn.dataset.original) btn.dataset.original=btn.textContent;btn.disabled=busy;btn.textContent=busy?"Please wait…":btn.dataset.original;}
-}
-
-$("login-tab").addEventListener("click",()=> {
-  $("login-tab").classList.add("active"); $("signup-tab").classList.remove("active");
-  $("login-form").classList.remove("hidden"); $("signup-form").classList.add("hidden"); message("auth-message","");
-});
-$("signup-tab").addEventListener("click",()=> {
-  $("signup-tab").classList.add("active"); $("login-tab").classList.remove("active");
-  $("signup-form").classList.remove("hidden"); $("login-form").classList.add("hidden"); message("auth-message","");
-});
-
-$("login-form").addEventListener("submit", async e=>{
-  e.preventDefault(); const form=e.currentTarget; setBusy(form,true); message("auth-message","");
-  try {
-    await signInWithEmailAndPassword(auth,$("login-email").value.trim(),$("login-password").value);
-  } catch(err){ message("auth-message",friendlyError(err),true); }
-  finally { setBusy(form,false); }
-});
-
-$("signup-form").addEventListener("submit", async e=>{
-  e.preventDefault(); const form=e.currentTarget; setBusy(form,true); message("auth-message","");
-  const name=$("signup-name").value.trim(), email=$("signup-email").value.trim(), phone=$("signup-phone").value.trim();
-  const password=$("signup-password").value, confirm=$("signup-confirm").value;
-  if(password!==confirm){message("auth-message","Passwords do not match.",true);setBusy(form,false);return;}
-  try {
-    const cred=await createUserWithEmailAndPassword(auth,email,password);
-    await updateProfile(cred.user,{displayName:name});
-    await setDoc(doc(db,"users",cred.user.uid),{
-      uid:cred.user.uid, userId:cred.user.uid.slice(0,8).toUpperCase(),
-      name, email, phone, country:"", city:"", bio:"",
-      photoURL:"", createdAt:serverTimestamp(), updatedAt:serverTimestamp(),
-      profileComplete:true, accountStatus:"active"
-    });
-    await sendEmailVerification(cred.user);
-    message("auth-message","Account created. A verification email has been sent.");
-  } catch(err){ message("auth-message",friendlyError(err),true); }
-  finally { setBusy(form,false); }
-});
-
-$("forgot-button").addEventListener("click",async()=>{
-  const email=$("login-email").value.trim();
-  if(!email){message("auth-message","Enter your email first, then select Forgot password.",true);return;}
-  try{await sendPasswordResetEmail(auth,email);message("auth-message","Password reset email sent. Check your inbox.");}
-  catch(err){message("auth-message",friendlyError(err),true);}
-});
-
-async function renderProfile(user) {
-  showProfile();
-  let data={};
-  try {
-    const snap=await getDoc(doc(db,"users",user.uid));
-    if(snap.exists()) data=snap.data();
-    else {
-      data={uid:user.uid,userId:user.uid.slice(0,8).toUpperCase(),name:user.displayName||"",email:user.email||"",phone:"",country:"",city:"",bio:"",createdAt:serverTimestamp(),updatedAt:serverTimestamp(),accountStatus:"active"};
-      await setDoc(doc(db,"users",user.uid),data);
-    }
-  } catch(err){ message("profile-message","Could not load profile: "+friendlyError(err),true); }
-  const name=data.name||user.displayName||"Live World User";
-  $("profile-name").textContent=name; $("profile-email").textContent=user.email||"";
-  $("profile-uid").textContent=data.userId||user.uid;
-  $("avatar").textContent=initials(name);
-  $("edit-name").value=data.name||user.displayName||"";
-  $("edit-phone").value=data.phone||"";
-  $("edit-country").value=data.country||"";
-  $("edit-city").value=data.city||"";
-  $("edit-bio").value=data.bio||"";
-  $("verify-button").textContent=user.emailVerified?"Email verified":"Send verification email";
-  $("verify-button").disabled=user.emailVerified;
-}
-
-$("profile-form").addEventListener("submit",async e=>{
-  e.preventDefault(); const user=auth.currentUser; if(!user)return;
-  const name=$("edit-name").value.trim();
-  if(!name){message("profile-message","Name is required.",true);return;}
-  try{
-    await updateDoc(doc(db,"users",user.uid),{
-      name,phone:$("edit-phone").value.trim(),country:$("edit-country").value.trim(),
-      city:$("edit-city").value.trim(),bio:$("edit-bio").value.trim(),updatedAt:serverTimestamp()
-    });
-    await updateProfile(user,{displayName:name});
-    $("profile-name").textContent=name; $("avatar").textContent=initials(name);
-    message("profile-message","Profile updated successfully.");
-  }catch(err){message("profile-message",friendlyError(err),true);}
-});
-
-$("verify-button").addEventListener("click",async()=>{
-  try{await sendEmailVerification(auth.currentUser);message("profile-message","Verification email sent.");}
-  catch(err){message("profile-message",friendlyError(err),true);}
-});
-$("logout-button").addEventListener("click",async()=>{
-  try{await signOut(auth);message("auth-message","You have been logged out.");showLogin();}
-  catch(err){message("profile-message",friendlyError(err),true);}
-});
-
-if(!firebaseReady){
-  showLogin();
-  message("auth-message","Setup required: add Firebase Web App settings in js/firebase-config.js, then reload.",true);
-} else {
-  onAuthStateChanged(auth,user=>{
-    if(user) renderProfile(user);
-    else showLogin();
-  });
-}
+import {auth,db} from './firebase.js';
+import {createUserWithEmailAndPassword,signInWithEmailAndPassword,onAuthStateChanged,updateProfile,sendEmailVerification,sendPasswordResetEmail,signOut} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+import {doc,getDoc,setDoc,updateDoc,collection,query,where,orderBy,limit,getDocs,addDoc,onSnapshot,serverTimestamp,deleteDoc} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+const $=id=>document.getElementById(id);let currentUser=null,profile={},creatingAccount=false,map=null,mapLayer=null,chatUnsub=null,msgUnsub=null,activeChat=null,activeOther=null,locationWatch=null;
+$('year').textContent=new Date().getFullYear();
+function msg(id,text,error=false){const e=$(id);if(e){e.textContent=text;e.classList.toggle('error',error)}}
+function initials(s='LW'){return s.trim().split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase()||'LW'}
+function phoneValid(v){return /^\+?[0-9][0-9\s()-]{7,17}$/.test(v.trim())}
+function errorText(e){const m={'auth/email-already-in-use':'This email is already registered.','auth/invalid-email':'Enter a valid email address.','auth/invalid-credential':'Email or password is incorrect.','auth/weak-password':'Use at least 8 characters for your password.','auth/operation-not-allowed':'Enable Email/Password in Firebase Authentication.','auth/too-many-requests':'Too many attempts. Please try again later.','permission-denied':'Firebase permission denied. Check that the latest Firestore Rules have been published.','failed-precondition':'A Firestore index may be required. Open the error details in the browser console.'};return m[e.code]||e.message||'Something went wrong.'}
+function busy(form,on){const b=form.querySelector('[type=submit]');if(b){b.disabled=on;b.dataset.old??=b.textContent;b.textContent=on?'Please wait…':b.dataset.old}}
+$('login-tab').onclick=()=>{ $('login-tab').classList.add('active');$('signup-tab').classList.remove('active');$('login-form').classList.remove('hidden');$('signup-form').classList.add('hidden');msg('auth-message','')};
+$('signup-tab').onclick=()=>{ $('signup-tab').classList.add('active');$('login-tab').classList.remove('active');$('signup-form').classList.remove('hidden');$('login-form').classList.add('hidden');msg('auth-message','')};
+$('login-form').onsubmit=async e=>{e.preventDefault();busy(e.currentTarget,true);try{await signInWithEmailAndPassword(auth,$('login-email').value.trim(),$('login-password').value)}catch(x){msg('auth-message',errorText(x),true)}finally{busy(e.currentTarget,false)}};
+$('signup-form').onsubmit=async e=>{e.preventDefault();const f=e.currentTarget;busy(f,true);const name=$('signup-name').value.trim(),email=$('signup-email').value.trim(),phone=$('signup-phone').value.trim(),pw=$('signup-password').value;if(!phoneValid(phone)){msg('auth-message','Enter a valid UAE mobile number, including +971 when possible.',true);busy(f,false);return}if(pw!==$('signup-confirm').value){msg('auth-message','Passwords do not match.',true);busy(f,false);return}try{creatingAccount=true;const c=await createUserWithEmailAndPassword(auth,email,pw);await updateProfile(c.user,{displayName:name});const uid=c.user.uid;const data={uid,userId:uid.slice(0,8).toUpperCase(),name,email,phone,city:'Dubai',bio:'',createdAt:serverTimestamp(),updatedAt:serverTimestamp(),accountStatus:'active',locationSharing:false};await setDoc(doc(db,'users',uid),data);await setDoc(doc(db,'publicProfiles',uid),{uid,userId:data.userId,name,city:'Dubai',bio:'',photoURL:'',updatedAt:serverTimestamp()});await sendEmailVerification(c.user);msg('auth-message','Account created. A verification email has been sent. You can start using Live World after verifying your email.')}catch(x){msg('auth-message',errorText(x),true)}finally{creatingAccount=false;busy(f,false)}};
+$('forgot-button').onclick=async()=>{const email=$('login-email').value.trim();if(!email)return msg('auth-message','Enter your email first.',true);try{await sendPasswordResetEmail(auth,email);msg('auth-message','Password reset email sent.')}catch(e){msg('auth-message',errorText(e),true)}};
+function showApp(){ $('auth-view').classList.add('hidden');$('app-view').classList.remove('hidden');$('user-chip').textContent=profile.name||currentUser.displayName||'Member';$('user-chip').classList.remove('hidden');$('profile-name').value=profile.name||'';$('profile-bio').value=profile.bio||'';$('profile-phone').value=profile.phone||'';$('profile-city').value=profile.city||'Dubai';$('share-toggle').checked=!!profile.locationSharing;$('share-status').textContent=profile.locationSharing?'Location sharing is on':'Location sharing is off';initMap();listenMap();listenChats()}
+function showAuth(){$('auth-view').classList.remove('hidden');$('app-view').classList.add('hidden');$('user-chip').classList.add('hidden');if(locationWatch!==null){navigator.geolocation.clearWatch(locationWatch);locationWatch=null}if(chatUnsub)chatUnsub();if(msgUnsub)msgUnsub()}
+onAuthStateChanged(auth,async u=>{if(creatingAccount)return;currentUser=u;if(!u)return showAuth();try{const s=await getDoc(doc(db,'users',u.uid));if(!s.exists()){await signOut(auth);return msg('auth-message','Your profile record is missing. Please contact support.',true)}profile=s.data();showApp()}catch(e){showAuth();msg('auth-message',errorText(e),true)}});
+$('logout').onclick=async()=>{await stopSharing();await signOut(auth)};
+document.querySelectorAll('.nav-btn[data-page]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav-btn[data-page]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.page').forEach(p=>p.classList.toggle('hidden',p.id!==b.dataset.page));if(b.dataset.page==='map-page'&&map)setTimeout(()=>map.invalidateSize(),150)});
+function initMap(){if(map)return;map=L.map('map').setView([25.2048,55.2708],10);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);mapLayer=L.layerGroup().addTo(map)}
+function listenMap(){onSnapshot(collection(db,'presence'),snap=>{if(!mapLayer)return;mapLayer.clearLayers();snap.forEach(d=>{const p=d.data();if(d.id===currentUser.uid||!p.sharing||!p.lat||!p.lng)return;const marker=L.marker([p.lat,p.lng]).addTo(mapLayer);marker.bindPopup(`<b>${safe(p.name||'Live World member')}</b><br>${safe(p.city||'UAE')}<br><button class="map-chat" data-uid="${safe(d.id)}">Message</button>`);marker.on('popupopen',ev=>{const btn=ev.popup.getElement().querySelector('.map-chat');if(btn)btn.onclick=()=>startChat(d.id,p.name||'Member')})})},e=>console.warn('Map listener:',e));}
+function safe(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+$('share-toggle').onchange=async e=>{if(e.target.checked){if(!navigator.geolocation){e.target.checked=false;return msg('share-status','Location is not supported by this browser.')}msg('share-status','Waiting for location permission…');locationWatch=navigator.geolocation.watchPosition(async pos=>{const lat=Math.round(pos.coords.latitude*100)/100,lng=Math.round(pos.coords.longitude*100)/100;try{await setDoc(doc(db,'presence',currentUser.uid),{uid:currentUser.uid,name:profile.name,city:profile.city||'Dubai',lat,lng,sharing:true,updatedAt:serverTimestamp()});await updateDoc(doc(db,'users',currentUser.uid),{locationSharing:true,updatedAt:serverTimestamp()});profile.locationSharing=true;$('share-status').textContent='Sharing an approximate area'}catch(x){msg('share-status',errorText(x),true)}},err=>{e.target.checked=false;msg('share-status','Location permission was not granted. Sharing remains off.')},{enableHighAccuracy:false,maximumAge:60000,timeout:15000})}else await stopSharing()};
+async function stopSharing(){if(locationWatch!==null){navigator.geolocation.clearWatch(locationWatch);locationWatch=null}if(currentUser){try{await deleteDoc(doc(db,'presence',currentUser.uid));await updateDoc(doc(db,'users',currentUser.uid),{locationSharing:false,updatedAt:serverTimestamp()})}catch(e){console.warn(e)}}profile.locationSharing=false;if($('share-toggle'))$('share-toggle').checked=false;if($('share-status'))$('share-status').textContent='Location sharing is off'}
+async function searchPeople(){const term=$('people-search').value.trim().toLowerCase();const box=$('people-list');box.innerHTML='';if(term.length<2){box.textContent='Enter at least 2 characters.';return}try{const snap=await getDocs(query(collection(db,'publicProfiles'),limit(100)));const found=snap.docs.map(d=>d.data()).filter(p=>p.uid!==currentUser.uid&&((p.name||'').toLowerCase().includes(term)||(p.userId||'').toLowerCase().includes(term)));if(!found.length){box.textContent='No members found.';return}found.forEach(p=>{const el=document.createElement('article');el.className='person-card';el.innerHTML=`<div class="person-top"><div class="avatar">${safe(initials(p.name||'LW'))}</div><div><b>${safe(p.name||'Member')}</b><div class="muted">${safe(p.city||'UAE')} · ${safe(p.userId||'')}</div></div></div><p>${safe(p.bio||'Live World member')}</p><button class="primary">Message</button>`;el.querySelector('button').onclick=()=>startChat(p.uid,p.name||'Member');box.append(el)})}catch(e){box.textContent=errorText(e)}}
+$('people-search-btn').onclick=searchPeople;$('people-search').onkeydown=e=>{if(e.key==='Enter')searchPeople()};
+async function chatId(a,b){return [a,b].sort().join('_')}
+async function startChat(uid,name){try{const blocks=await getDocs(query(collection(db,'blocks'),where('ownerUid','==',currentUser.uid),where('blockedUid','==',uid),limit(1)));if(!blocks.empty)return alert('You have blocked this member. Unblock them to message.');const id=await chatId(currentUser.uid,uid),ref=doc(db,'chats',id),s=await getDoc(ref);if(!s.exists())await setDoc(ref,{members:[currentUser.uid,uid],memberNames:{[currentUser.uid]:profile.name,[uid]:name},lastMessage:'',updatedAt:serverTimestamp(),createdAt:serverTimestamp()});activeChat=id;activeOther={uid,name};$('chat-empty').classList.add('hidden');$('conversation-view').classList.remove('hidden');$('conversation-title').textContent=name;document.querySelector('[data-page="chat-page"]').click();listenMessages(id);renderChatList()}catch(e){alert(errorText(e))}}
+function listenChats(){chatUnsub=onSnapshot(query(collection(db,'chats'),where('members','array-contains',currentUser.uid),orderBy('updatedAt','desc'),limit(50)),snap=>{const box=$('chat-list');box.innerHTML='';if(snap.empty){box.innerHTML='<p class="muted">No conversations yet. Find people and select Message.</p>';return}snap.forEach(d=>{const c=d.data(),other=c.members.find(x=>x!==currentUser.uid),name=c.memberNames?.[other]||'Live World member';const el=document.createElement('button');el.className='chat-person';el.innerHTML=`<span class="avatar">${safe(initials(name))}</span><span><b>${safe(name)}</b><small class="muted">${safe(c.lastMessage||'Start chatting')}</small></span>`;el.onclick=()=>{activeChat=d.id;activeOther={uid:other,name};$('chat-empty').classList.add('hidden');$('conversation-view').classList.remove('hidden');$('conversation-title').textContent=name;listenMessages(d.id)};box.append(el)})},e=>{console.warn(e);$('chat-list').textContent=errorText(e)})}
+function renderChatList(){}function listenMessages(id){if(msgUnsub)msgUnsub();msgUnsub=onSnapshot(query(collection(db,'chats',id,'messages'),orderBy('createdAt','asc'),limit(100)),snap=>{const box=$('messages');box.innerHTML='';snap.forEach(d=>{const m=d.data(),el=document.createElement('div');el.className='bubble'+(m.senderUid===currentUser.uid?' mine':'');el.innerHTML=`${safe(m.text)}<small>${m.senderUid===currentUser.uid?'You':safe(activeOther?.name||'Member')}</small>`;box.append(el)});box.scrollTop=box.scrollHeight},e=>msg('conversation-title',errorText(e),true))}
+$('send-form').onsubmit=async e=>{e.preventDefault();const text=$('message-input').value.trim();if(!text||!activeChat||!activeOther)return;const btn=e.currentTarget.querySelector('button');btn.disabled=true;try{const blocked=await getDocs(query(collection(db,'blocks'),where('ownerUid','==',activeOther.uid),where('blockedUid','==',currentUser.uid),limit(1)));if(!blocked.empty)throw new Error('This member is not accepting messages from you.');await addDoc(collection(db,'chats',activeChat,'messages'),{senderUid:currentUser.uid,text,createdAt:serverTimestamp()});await updateDoc(doc(db,'chats',activeChat),{lastMessage:text.slice(0,100),updatedAt:serverTimestamp()});$('message-input').value=''}catch(x){alert(errorText(x))}finally{btn.disabled=false}};
+$('block-user').onclick=async()=>{if(!activeOther||!confirm('Block this member? They will no longer be able to message you.'))return;try{await setDoc(doc(db,'blocks',`${currentUser.uid}_${activeOther.uid}`),{ownerUid:currentUser.uid,blockedUid:activeOther.uid,createdAt:serverTimestamp()});alert('Member blocked.');}catch(e){alert(errorText(e))}};
+$('report-user').onclick=async()=>{if(!activeOther)return;const reason=prompt('Tell us why you are reporting this conversation:');if(!reason?.trim())return;try{await addDoc(collection(db,'reports'),{reporterUid:currentUser.uid,reportedUid:activeOther.uid,chatId:activeChat,reason:reason.trim().slice(0,500),createdAt:serverTimestamp(),status:'open'});alert('Report submitted. Thank you.')}catch(e){alert(errorText(e))}};
+$('profile-form').onsubmit=async e=>{e.preventDefault();const name=$('profile-name').value.trim(),bio=$('profile-bio').value.trim(),phone=$('profile-phone').value.trim(),city=$('profile-city').value;if(!phoneValid(phone))return msg('profile-message','Enter a valid mobile number.',true);try{await updateDoc(doc(db,'users',currentUser.uid),{name,bio,phone,city,updatedAt:serverTimestamp()});await setDoc(doc(db,'publicProfiles',currentUser.uid),{uid:currentUser.uid,userId:profile.userId,name,bio,city,updatedAt:serverTimestamp()},{merge:true});await updateProfile(currentUser,{displayName:name});profile={...profile,name,bio,phone,city};$('user-chip').textContent=name;msg('profile-message','Profile saved. Your email and phone remain private.')}catch(x){msg('profile-message',errorText(x),true)}};
