@@ -1,10 +1,8 @@
-// Replace these placeholder values with your own Firebase Web App config.
-// Firebase Console > Project settings > General > Your apps > Web app.
 export const firebaseConfig = {
-  apiKey: "PASTE_API_KEY_HERE",
-  authDomain: "PASTE_PROJECT_ID.firebaseapp.com",
-  projectId: "PASTE_PROJECT_ID",
-  storageBucket: "PASTE_PROJECT_ID.appspot.com",
-  messagingSenderId: "PASTE_MESSAGING_SENDER_ID",
-  appId: "PASTE_APP_ID"
+  apiKey: "AIzaSyDPE0pan5XMgOXwAs4ZOI-bcqMkXn0l31Q",
+  authDomain: "live-world-16cdd.firebaseapp.com",
+  projectId: "live-world-16cdd",
+  storageBucket: "live-world-16cdd.firebasestorage.app",
+  messagingSenderId: "346739106223",
+  appId: "1:346739106223:web:ddacad7a1b0a44a9ce4f5a"
 };
