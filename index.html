@@ -1,71 +1,11 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#123b2a">
-  <meta name="description" content="Live World — connect with people around the world.">
-  <title>Live World — Account</title>
-  <link rel="stylesheet" href="./css/main.css">
-  <script type="module" src="./js/app.js"></script>
-</head>
-<body>
-  <main class="shell">
-    <header class="brand">
-      <div class="brand-mark" aria-hidden="true">LW</div>
-      <div><h1>LIVE WORLD</h1><p>Connect • Explore • Chat</p></div>
-    </header>
-
-    <section id="auth-view" class="panel">
-      <div class="tabs" role="tablist" aria-label="Account">
-        <button class="tab active" id="login-tab" type="button">Login</button>
-        <button class="tab" id="signup-tab" type="button">Create account</button>
-      </div>
-
-      <form id="login-form" class="form">
-        <h2>Welcome back</h2>
-        <p class="muted">Sign in to your Live World account.</p>
-        <label>Email<input id="login-email" type="email" autocomplete="email" required></label>
-        <label>Password<input id="login-password" type="password" autocomplete="current-password" minlength="8" required></label>
-        <button class="primary" type="submit">Login</button>
-        <button class="text-button" id="forgot-button" type="button">Forgot password?</button>
-      </form>
-
-      <form id="signup-form" class="form hidden">
-        <h2>Create your account</h2>
-        <p class="muted">Join people around the world.</p>
-        <label>Full name<input id="signup-name" type="text" autocomplete="name" maxlength="60" required></label>
-        <label>Email<input id="signup-email" type="email" autocomplete="email" required></label>
-        <label>Mobile number <span class="muted">(optional)</span><input id="signup-phone" type="tel" autocomplete="tel" maxlength="25"></label>
-        <label>Password<input id="signup-password" type="password" autocomplete="new-password" minlength="8" required></label>
-        <label>Confirm password<input id="signup-confirm" type="password" autocomplete="new-password" minlength="8" required></label>
-        <label class="check"><input id="terms" type="checkbox" required> I agree to the Terms and Privacy Policy.</label>
-        <button class="primary" type="submit">Create account</button>
-      </form>
-      <div id="auth-message" class="message" role="status" aria-live="polite"></div>
-    </section>
-
-    <section id="profile-view" class="panel hidden">
-      <div class="profile-head">
-        <div class="avatar" id="avatar">LW</div>
-        <div><h2 id="profile-name">Your profile</h2><p class="muted" id="profile-email"></p></div>
-      </div>
-      <div class="user-id"><span class="muted">Your Live World ID</span><strong id="profile-uid"></strong></div>
-      <form id="profile-form" class="form">
-        <label>Display name<input id="edit-name" type="text" maxlength="60" required></label>
-        <label>Mobile number<input id="edit-phone" type="tel" maxlength="25"></label>
-        <label>Country<input id="edit-country" type="text" maxlength="60" placeholder="e.g. United Arab Emirates"></label>
-        <label>City<input id="edit-city" type="text" maxlength="60" placeholder="e.g. Dubai"></label>
-        <label>About you<input id="edit-bio" type="text" maxlength="160" placeholder="A short introduction"></label>
-        <button class="primary" type="submit">Save profile</button>
-      </form>
-      <div class="profile-actions">
-        <button class="secondary" id="verify-button" type="button">Send verification email</button>
-        <button class="danger" id="logout-button" type="button">Logout</button>
-      </div>
-      <div id="profile-message" class="message" role="status" aria-live="polite"></div>
-    </section>
-    <footer>© <span id="year"></span> Live World. Location sharing is not enabled in Phase 1.</footer>
-  </main>
-</body>
-</html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#10251d"><title>Live World</title><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><link rel="stylesheet" href="css/main.css"></head><body>
+<header><div class="brand"><span class="brand-mark">LW</span><div><b>Live World</b><small>Meet the world around you</small></div></div><div id="user-chip" class="hidden"></div></header>
+<main>
+<section id="auth-view" class="auth-wrap"><div class="hero"><span class="eyebrow">YOUR WORLD. YOUR CHOICE.</span><h1>Connect beyond borders.</h1><p>Discover people, share a general area when you choose, and start conversations.</p><div class="hero-points"><span>● Privacy controls</span><span>● Live map</span><span>● Direct chat</span></div></div><div class="auth-card"><div class="tabs"><button id="login-tab" class="tab active">Log in</button><button id="signup-tab" class="tab">Create account</button></div><form id="login-form"><label>Email<input id="login-email" type="email" autocomplete="email" required></label><label>Password<input id="login-password" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">Log in</button><button id="forgot-button" class="link-btn" type="button">Forgot password?</button></form><form id="signup-form" class="hidden"><label>Full name<input id="signup-name" maxlength="50" required></label><label>Email<input id="signup-email" type="email" required></label><label>UAE mobile number <span class="required">Required</span><input id="signup-phone" type="tel" inputmode="tel" placeholder="+971 5X XXX XXXX" autocomplete="tel" required></label><label>Password<input id="signup-password" type="password" minlength="8" required></label><label>Confirm password<input id="signup-confirm" type="password" minlength="8" required></label><label class="check"><input id="terms" type="checkbox" required> I agree to the Terms and Privacy Policy.</label><button class="primary" type="submit">Create account</button></form><p id="auth-message" class="message" aria-live="polite"></p><p class="fine">Use a mobile number you control. Never share verification codes or passwords.</p></div></section>
+<section id="app-view" class="hidden"><nav class="nav"><button class="nav-btn active" data-page="map-page">World map</button><button class="nav-btn" data-page="people-page">People</button><button class="nav-btn" data-page="chat-page">Chats <span id="chat-count"></span></button><button class="nav-btn" data-page="profile-page">My profile</button><button id="logout" class="nav-btn logout">Log out</button></nav>
+<section id="map-page" class="page"><div class="page-head"><div><span class="eyebrow">EXPLORE</span><h2>Live world map</h2><p>Only people who turn sharing on appear here. Public locations are approximate.</p></div><div class="share-box"><label class="switch-line"><input id="share-toggle" type="checkbox"><span>Share my area</span></label><small id="share-status">Location sharing is off</small></div></div><div id="map"></div><div class="privacy-note">Your exact GPS coordinates are not shown to other members. Sharing is optional and can be stopped anytime.</div></section>
+<section id="people-page" class="page hidden"><div class="page-head"><div><span class="eyebrow">DISCOVER</span><h2>People</h2><p>Find members by their public display name or user ID.</p></div></div><div class="search-row"><input id="people-search" placeholder="Search name or user ID"><button id="people-search-btn" class="primary">Search</button></div><div id="people-list" class="people-grid"></div></section>
+<section id="chat-page" class="page hidden"><div class="page-head"><div><span class="eyebrow">MESSAGES</span><h2>Your chats</h2><p>Start a conversation from the People page or a map marker.</p></div></div><div class="chat-layout"><aside id="chat-list" class="chat-list"><p class="muted">Your conversations will appear here.</p></aside><section class="conversation"><div id="chat-empty" class="empty-state">Select a conversation to start chatting.</div><div id="conversation-view" class="hidden"><div id="conversation-title" class="conversation-title"></div><div id="messages" class="messages"></div><form id="send-form" class="send-form"><input id="message-input" maxlength="2000" placeholder="Write a message…" autocomplete="off" required><button class="primary">Send</button></form><div class="chat-actions"><button id="block-user" class="link-btn danger" type="button">Block user</button><button id="report-user" class="link-btn danger" type="button">Report conversation</button></div></div></section></div></section>
+<section id="profile-page" class="page hidden"><div class="page-head"><div><span class="eyebrow">ACCOUNT</span><h2>My profile</h2><p>Keep your public profile minimal. Your email and mobile number are private.</p></div></div><form id="profile-form" class="profile-form"><label>Display name<input id="profile-name" maxlength="50" required></label><label>About me<input id="profile-bio" maxlength="160" placeholder="A little about you"></label><label>City<select id="profile-city"><option>Dubai</option><option>Abu Dhabi</option><option>Sharjah</option><option>Ajman</option><option>Ras Al Khaimah</option><option>Fujairah</option><option>Umm Al Quwain</option><option>Other UAE</option></select></label><label>Mobile number (private)<input id="profile-phone" type="tel" required></label><button class="primary">Save profile</button><p id="profile-message" class="message"></p></form></section>
+</section></main><footer>© <span id="year"></span> Live World · Be kind. Stay safe.</footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script type="module" src="js/app.js"></script></body></html>
