@@ -29,9 +29,10 @@ main:has(#app-view:not(.hidden)){padding:0;max-width:none}
 .map-message.visible{opacity:1;transform:translateY(0)}
 .map-message.error{color:#a32626}
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
-.saved-pin-wrap,.gps-dot-wrap{background:transparent;border:0}.saved-pin-wrap{cursor:grab}.saved-pin-wrap:active{cursor:grabbing}
-.saved-pin-marker{width:30px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#e44c42;border:3px solid #fff;box-shadow:0 2px 9px #0005;display:grid;place-items:center;color:#fff}
-.saved-pin-marker span{transform:rotate(45deg);font-size:18px;font-weight:900}
+.saved-pin-wrap,.gps-dot-wrap{background:transparent;border:0}.saved-pin-wrap{cursor:pointer}
+.saved-pin-marker{width:26px;height:38px;position:relative;display:grid;place-items:center;filter:drop-shadow(0 2px 3px #0004)}
+.saved-pin-marker span{width:22px;height:22px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#176b49;border:2.5px solid #fff;position:relative;box-shadow:0 1px 4px #10251d35}
+.saved-pin-marker span:after{content:"";position:absolute;width:6px;height:6px;border-radius:50%;background:#fff;left:6px;top:6px}
 .gps-dot-pulse{width:26px;height:26px;border-radius:50%;background:#168bf0a6;display:grid;place-items:center;animation:gpsPulse 1.8s ease-out infinite}
 .gps-dot-pulse span{width:12px;height:12px;border-radius:50%;background:#168bf0;border:2px solid white;box-shadow:0 1px 5px #0005}
 @keyframes gpsPulse{0%{box-shadow:0 0 0 0 #168bf077}70%{box-shadow:0 0 0 13px #168bf000}100%{box-shadow:0 0 0 0 #168bf000}}
