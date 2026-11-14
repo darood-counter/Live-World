@@ -22,7 +22,7 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create, update: if isOwner(uid)
         && request.resource.data.uid == uid
-        && request.resource.data.keys().hasOnly(['uid','userId','name','city','bio','photoURL','onlineStatus','savedLocation','updatedAt'])
+        && request.resource.data.keys().hasOnly(['uid','userId','name','city','bio','phone','photoURL','onlineStatus','savedLocation','updatedAt'])
         && (!('onlineStatus' in request.resource.data) || request.resource.data.onlineStatus in ['online','offline'])
         && (!('savedLocation' in request.resource.data) || request.resource.data.savedLocation == null || (request.resource.data.savedLocation.lat is number && request.resource.data.savedLocation.lng is number && request.resource.data.savedLocation.lat >= -90 && request.resource.data.savedLocation.lat <= 90 && request.resource.data.savedLocation.lng >= -180 && request.resource.data.savedLocation.lng <= 180 && (!('address' in request.resource.data.savedLocation) || request.resource.data.savedLocation.address is string) && (!('source' in request.resource.data.savedLocation) || request.resource.data.savedLocation.source in ['gps','map']))));
       allow delete: if isOwner(uid);
