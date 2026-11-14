@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#10251d">
   <title>DriverLink | Taxi Driver Network</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="css/main.css?v=20261114-pin-chat-polish1">
+  <link rel="stylesheet" href="css/main.css?v=20261114-osm-dubai-map3">
 </head>
 <body>
 <header><div class="brand"><span class="brand-mark">DL</span><div><b>DriverLink</b><small>Taxi Driver Network</small></div></div><div class="header-right"><span id="user-chip" class="user-chip hidden"></span><button id="online-toggle" class="online-toggle hidden" type="button">Go Online</button></div></header>
@@ -24,7 +24,7 @@
     <div class="map-overlay-top"><span id="my-status" class="status-pill offline">OFFLINE</span><span id="map-online-count" class="count-pill">0 drivers online</span></div>
     <div class="map-controls" aria-label="Map controls">
       <button id="current-location" class="map-float-btn gps-button" type="button" aria-label="Show GPS current location" title="Current GPS location"><span aria-hidden="true">◎</span></button>
-      <button id="set-on-map" class="map-float-btn pin-button" type="button" aria-label="Save the location at the map center" title="Save selected location"><span aria-hidden="true">📍</span></button>
+      <button id="set-on-map" class="map-float-btn pin-button" type="button" aria-label="Save the location at the map center" title="Save selected location"><span aria-hidden="true">⌖</span></button>
       <button id="find-drivers" class="map-float-btn people-button" type="button" aria-label="Find drivers" title="Find drivers"><span aria-hidden="true">♙</span></button>
     </div>
     <div id="map-message" class="map-message" role="status" aria-live="polite"></div>
@@ -37,7 +37,7 @@
   <nav class="nav" aria-label="Main navigation"><button class="nav-btn active" data-page="map-page" type="button"><span class="nav-icon" aria-hidden="true">⌖</span><span>Location</span></button><button class="nav-btn" data-page="chat-page" type="button"><span class="nav-icon" aria-hidden="true">▤</span><span>Chat <span id="chat-count"></span></span></button><button class="nav-btn" data-page="profile-page" type="button"><span class="nav-icon" aria-hidden="true">◉</span><span>Profile</span></button></nav>
 </section>
 </main>
-<div id="profile-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-name"><div class="modal-card"><button id="close-profile" class="modal-close" type="button" aria-label="Close">×</button><div class="profile-modal-top"><div id="modal-avatar" class="avatar large">D</div><div><span id="modal-status" class="status-pill offline">OFFLINE</span><h2 id="modal-name">Driver profile</h2><p id="modal-userid" class="muted"></p></div></div><dl class="profile-details"><dt>City</dt><dd id="modal-city">—</dd><dt>About</dt><dd id="modal-bio">—</dd><dt>Location</dt><dd id="modal-location">Not currently visible</dd><dt>Mobile</dt><dd id="modal-phone">—</dd></dl><div class="modal-actions"><button id="modal-chat" class="primary message-cta" type="button">✉  Send Message</button></div></div></div>
+<div id="profile-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-name"><div class="modal-card"><button id="close-profile" class="modal-close" type="button" aria-label="Close">×</button><div class="profile-modal-top"><div id="modal-avatar" class="avatar large">D</div><div><span id="modal-status" class="status-pill offline">OFFLINE</span><h2 id="modal-name">Driver profile</h2><p id="modal-userid" class="muted"></p></div></div><dl class="profile-details"><dt>City</dt><dd id="modal-city">—</dd><dt>About</dt><dd id="modal-bio">—</dd><dt>Location</dt><dd id="modal-location">Not currently visible</dd><dt>Mobile</dt><dd id="modal-phone">—</dd></dl><div class="modal-actions"><button id="modal-chat" class="primary" type="button">Chat</button></div></div></div>
 <footer>© <span id="year"></span> DriverLink · Drive safe.</footer>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script type="module" src="js/app.js?v=20261114-pin-chat-polish1"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script type="module" src="js/app.js?v=20261114-osm-dubai-map3"></script>
 </body></html>
