@@ -9,3 +9,39 @@ main:has(#app-view:not(.hidden)){max-width:none;padding:10px 12px 0}#app-view{mi
 @media(max-width:760px){.profile-summary{padding:15px}.profile-avatar{width:58px;height:58px}.chat-layout{border-radius:14px}.conversation{padding:11px}.profile-form{padding:17px}}
 
 .chat-person{position:relative}.chat-person-copy{display:block;min-width:0;flex:1}.unread-badge{display:inline-grid;place-items:center;min-width:21px;height:21px;padding:0 6px;border-radius:99px;background:var(--green);color:#fff;font-size:10px;font-weight:900}.nav-btn #chat-count{font-size:10px;color:var(--green);font-weight:900}
+
+
+/* Full-screen map view inspired by the supplied map reference */
+main:has(#app-view:not(.hidden)){padding:0;max-width:none}
+#app-view{min-height:calc(100dvh - 66px)}
+#map-page{position:relative;height:calc(100dvh - 66px - 72px);min-height:360px;display:block;overflow:hidden;gap:0}
+#map{position:absolute;inset:0;width:100%;height:100%;min-height:0;border:0;border-radius:0;z-index:1}
+.map-overlay-top{position:absolute;z-index:500;top:14px;left:14px;right:14px;display:flex;justify-content:space-between;align-items:center;pointer-events:none}
+.map-overlay-top>*{pointer-events:auto;box-shadow:0 2px 12px #17251d22}
+.map-controls{position:absolute;z-index:600;right:14px;bottom:24px;display:flex;flex-direction:column;gap:12px}
+.map-float-btn{width:50px;height:50px;border:0;border-radius:50%;background:#fff;color:#17251d;box-shadow:0 3px 14px #17251d30;display:grid;place-items:center;font-size:30px;font-weight:500;cursor:pointer}
+.map-float-btn:active{transform:scale(.95)}
+.map-float-btn.selected{background:var(--green);color:#fff}
+.gps-button{color:#1596e8;font-size:34px}
+.pin-button{font-size:31px}
+.people-button{font-size:25px}
+.map-message{position:absolute;z-index:700;left:14px;right:76px;bottom:28px;margin:auto;width:max-content;max-width:calc(100% - 100px);padding:9px 13px;border-radius:12px;background:#fff;color:#24342b;font-size:12px;font-weight:700;box-shadow:0 2px 14px #17251d25;opacity:0;transform:translateY(8px);transition:opacity .18s,transform .18s;pointer-events:none}
+.map-message.visible{opacity:1;transform:translateY(0)}
+.map-message.error{color:#a32626}
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.saved-pin-wrap,.gps-dot-wrap{background:transparent;border:0}
+.saved-pin-marker{width:30px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#e44c42;border:3px solid #fff;box-shadow:0 2px 9px #0005;display:grid;place-items:center;color:#fff}
+.saved-pin-marker span{transform:rotate(45deg);font-size:18px;font-weight:900}
+.gps-dot-pulse{width:26px;height:26px;border-radius:50%;background:#168bf0a6;display:grid;place-items:center;animation:gpsPulse 1.8s ease-out infinite}
+.gps-dot-pulse span{width:12px;height:12px;border-radius:50%;background:#168bf0;border:2px solid white;box-shadow:0 1px 5px #0005}
+@keyframes gpsPulse{0%{box-shadow:0 0 0 0 #168bf077}70%{box-shadow:0 0 0 13px #168bf000}100%{box-shadow:0 0 0 0 #168bf000}}
+#map.pin-mode{cursor:crosshair}
+@media(max-width:760px){
+ main:has(#app-view:not(.hidden)){padding:0}
+ #app-view{min-height:calc(100dvh - 60px)}
+ #map-page{height:calc(100dvh - 60px - 68px);min-height:300px}
+ .map-controls{right:12px;bottom:18px;gap:10px}
+ .map-float-btn{width:48px;height:48px}
+ .map-overlay-top{top:10px;left:10px;right:10px}
+ .map-message{left:10px;bottom:20px;max-width:calc(100% - 86px);font-size:11px}
+}
