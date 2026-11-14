@@ -86,7 +86,7 @@ function showOwnSavedPin(){
   if(ownSavedMarker){map.removeLayer(ownSavedMarker);ownSavedMarker=null;}
   const loc=profile.savedLocation;
   if(!loc||!Number.isFinite(loc.lat)||!Number.isFinite(loc.lng))return;
-  const icon=L.divIcon({className:'saved-pin-wrap',html:'<div class="saved-pin-marker"><span>⌖</span></div>',iconSize:[34,42],iconAnchor:[17,38]});
+  const icon=L.divIcon({className:'saved-pin-wrap',html:'<div class="saved-pin-marker"><span></span></div>',iconSize:[34,42],iconAnchor:[17,38]});
   ownSavedMarker=L.marker([loc.lat,loc.lng],{icon,zIndexOffset:800,draggable:false,keyboard:false}).addTo(map);
   ownSavedMarker.bindPopup(`<div class="map-popup"><b>Your Saved Pin Point</b><div><b>Name:</b> ${safe(profile.name||'Driver')}</div><div><b>About me:</b> ${safe(profile.bio||'No description added.')}</div><div><b>Contact number:</b> ${safe(profile.phone||'Not provided')}</div><div>${safe(profile.city||'UAE')} · <span class="online-word">${profile.onlineStatus==='online'?'ONLINE':'OFFLINE'}</span></div><small>Fixed saved location. Go Offline to choose a new location.</small></div>`);
 }
