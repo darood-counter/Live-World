@@ -1,7 +1,21 @@
-SETUP
-1. Upload index.html to the site root.
-2. Upload css/main.css to css/main.css.
-3. Upload js/app.js to js/app.js.
-4. Do NOT delete or replace js/firebase.js.
-5. Publish firestore.rules in Firebase Console.
-6. Open the HTTPS website, log in, tap Current Location or Set on Map once, then switch Go Online.
+DRIVERLINK UPDATE SETUP
+
+1. Replace index.html in your website root.
+2. Replace css/main.css with the included css/main.css.
+3. Replace js/app.js with the included js/app.js.
+4. Keep your existing js/firebase.js unchanged. It is intentionally not included.
+5. Compare firestore.rules with the rules already published in your Firebase project. If they already match, do not publish again. If they differ, update and publish the included rules.
+6. Deploy the website over HTTPS.
+
+TEST FLOW
+- Sign in, tap Set on Map, and tap the exact place where you want your driver marker to appear. The app saves that map point and its readable address. No GPS permission is requested.
+- Tap My Saved Location or the bottom Location tab. The map should center on the saved point without requesting GPS.
+- Tap Go Offline. Your marker disappears from the public map, but the saved location remains in your account.
+- Refresh or sign out and back in. Your Online/Offline status and saved location should remain as saved.
+- Open Chat and confirm conversations show unread counts. Open a conversation to mark its unread count as read.
+- Check that drivers close to one another appear in a numbered group; open the group to view profiles or chat.
+
+PRIVACY
+- The app does not use GPS, watchPosition(), or continuous location tracking.
+- Set on Map is the only way to create or change the saved location. Go Online and Go Offline only change availability status.
+- My Saved Location only centers the map on the stored point; it does not read GPS or change the stored point. All online drivers, including your own marker, appear at their saved locations.

@@ -24,7 +24,7 @@ service cloud.firestore {
         && request.resource.data.uid == uid
         && request.resource.data.keys().hasOnly(['uid','userId','name','city','bio','photoURL','onlineStatus','savedLocation','updatedAt'])
         && (!('onlineStatus' in request.resource.data) || request.resource.data.onlineStatus in ['online','offline'])
-        && (!('savedLocation' in request.resource.data) || request.resource.data.savedLocation == null || (request.resource.data.savedLocation.lat is number && request.resource.data.savedLocation.lng is number && request.resource.data.savedLocation.lat >= -90 && request.resource.data.savedLocation.lat <= 90 && request.resource.data.savedLocation.lng >= -180 && request.resource.data.savedLocation.lng <= 180));
+        && (!('savedLocation' in request.resource.data) || request.resource.data.savedLocation == null || (request.resource.data.savedLocation.lat is number && request.resource.data.savedLocation.lng is number && request.resource.data.savedLocation.lat >= -90 && request.resource.data.savedLocation.lat <= 90 && request.resource.data.savedLocation.lng >= -180 && request.resource.data.savedLocation.lng <= 180 && (!('address' in request.resource.data.savedLocation) || request.resource.data.savedLocation.address is string) && (!('source' in request.resource.data.savedLocation) || request.resource.data.savedLocation.source in ['gps','map']))));
       allow delete: if isOwner(uid);
     }
 
@@ -53,11 +53,11 @@ service cloud.firestore {
         && request.resource.data.members is list
         && request.resource.data.members.size() == 2
         && request.auth.uid in request.resource.data.members
-        && request.resource.data.keys().hasOnly(['members','memberNames','lastMessage','updatedAt','createdAt']);
+        && request.resource.data.keys().hasOnly(['members','memberNames','unreadCounts','lastMessage','updatedAt','createdAt']);
       allow update: if signedIn()
         && request.auth.uid in resource.data.members
         && request.resource.data.members == resource.data.members
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessage','updatedAt','memberNames']);
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessage','updatedAt','memberNames','unreadCounts']);
       allow delete: if false;
 
       match /messages/{messageId} {
