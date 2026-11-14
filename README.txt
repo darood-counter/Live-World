@@ -1,20 +1,20 @@
-DriverLink update — Saved Pin and GPS fix
+DriverLink — OpenStreetMap update
 
-This update keeps the existing DriverLink pages and Firebase setup.
+This package updates the map provider only. It retains the existing DriverLink app files and behavior from the source package, including Firebase integration references, saved-pin logic, driver grouping, profiles, and chat.
 
-Changes:
-- Go Online requests the phone's current GPS and saves it as the driver's Saved Pin in Firestore.
-- The Saved Pin is fixed and separate from the blue GPS dot.
-- While Online, the blue GPS dot follows the device location; it does not move the Saved Pin.
-- Go Offline stops GPS tracking but keeps the Saved Pin saved.
-- Your own Saved Pin remains visible on your map while Offline and Online.
-- Drag your Saved Pin marker to move it; the new position is saved to Firebase automatically.
-- The Pin Point button still lets you select a point by tapping the map.
-- Other signed-in drivers see your Saved Pin only while you are Online.
+MAP
+- OpenStreetMap standard tiles are the primary map source. No map API key is required.
+- If several map tiles fail to load, the app switches once to CARTO's light OSM-based map as a backup.
+- The map starts centered on the saved driver location when available, otherwise Dubai.
+- Reverse-geocoded address language is requested in English where supported by the geocoding service. Tile labels depend on the map provider's available name data.
 
-IMPORTANT:
-- Keep your existing js/firebase.js file. It is intentionally not included in this ZIP.
-- Upload/replace index.html, css/main.css, and js/app.js at the same GitHub Pages folder used by your live site.
-- Do not delete or replace js/firebase.js.
-- The supplied firestore.rules are unchanged from the prior package; only publish them if they match the rules currently used by your project.
-- GPS requires HTTPS and browser location permission.
+INSTALL
+1. Extract this ZIP.
+2. In the exact GitHub Pages folder serving the existing DriverLink website, replace index.html, css/main.css, and js/app.js with the files in this package.
+3. Keep your existing js/firebase.js unchanged. It is intentionally not included in this ZIP because it contains your project's Firebase configuration.
+4. Do not replace or delete any other Firebase files or Firestore data.
+5. Commit/push the files and wait for GitHub Pages to deploy. Then reload the site (preferably in a private/incognito tab).
+
+NOTES
+- This is a map-provider change, not a live Firebase deployment test.
+- OpenStreetMap data and public tile services have usage policies and availability limits. For a large production audience, use a tile provider/hosting plan appropriate to expected traffic.
