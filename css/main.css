@@ -55,3 +55,6 @@ main:has(#app-view:not(.hidden)){padding:0;max-width:none}
 #map.pin-mode .leaflet-marker-icon{cursor:pointer}
 #map-center-pin.hidden{display:none}
 #set-on-map:disabled{display:none}
+
+/* Driver selection list shown when several online drivers share one map pin */
+.cluster-instruction{display:block;color:var(--muted);font-size:11px;margin:4px 0 7px}.cluster-driver-name{width:100%;display:flex;align-items:center;gap:9px;text-align:left;padding:9px 4px;border:0;border-top:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}.cluster-avatar{width:32px;height:32px;flex:0 0 32px;border-radius:50%;display:grid;place-items:center;background:#e8f0ea;color:var(--green2);font-size:11px;font-weight:800}.cluster-name-copy{min-width:0;flex:1}.cluster-name-copy b{display:block;font-size:12px}.cluster-name-copy small{display:block;color:var(--muted);font-size:10px;margin-top:2px}.cluster-chevron{font-size:22px;color:var(--green2);font-weight:700}
