@@ -38,7 +38,7 @@ function initMap(){
   if(map)return;
   const saved=profile.savedLocation;
   map=L.map('map',{zoomControl:false,preferCanvas:true}).setView(saved&&Number.isFinite(saved.lat)&&Number.isFinite(saved.lng)?[saved.lat,saved.lng]:[25.2048,55.2708],saved?14:12);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:20,attribution:'© OpenStreetMap © CARTO'}).addTo(map);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
   mapLayer=L.layerGroup().addTo(map);
   map.on('click',async e=>{if(!pinMode)return;pinMode=false;$('set-on-map').classList.remove('selected');try{await saveDriverLocation(e.latlng.lat,e.latlng.lng,'map');showMapMessage('Saved Pin updated on the map.')}catch(err){showMapMessage(errorText(err),true)}});
   showOwnSavedPin();
