@@ -67,7 +67,7 @@ function showOwnSavedPin(){
   if(!loc||!Number.isFinite(loc.lat)||!Number.isFinite(loc.lng))return;
   const icon=L.divIcon({className:'saved-pin-wrap',html:'<div class="saved-pin-marker"><span>⌖</span></div>',iconSize:[34,42],iconAnchor:[17,38]});
   ownSavedMarker=L.marker([loc.lat,loc.lng],{icon,zIndexOffset:800,draggable:false,keyboard:false}).addTo(map);
-  ownSavedMarker.bindPopup('<b>Your Saved Pin Point</b><br><small>Fixed saved location. Go Offline to choose a new location by moving the map.</small>');
+  ownSavedMarker.bindPopup(`<div class="map-popup"><b>Your Saved Pin Point</b><div><b>Name:</b> ${safe(profile.name||'Driver')}</div><div><b>About me:</b> ${safe(profile.bio||'No description added.')}</div><div><b>Contact number:</b> ${safe(profile.phone||'Not provided')}</div><div>${safe(profile.city||'UAE')} · <span class="online-word">${profile.onlineStatus==='online'?'ONLINE':'OFFLINE'}</span></div><small>Fixed saved location. Go Offline to choose a new location.</small></div>`);
 }
 function setGpsDot(lat,lng,accuracy){
   if(!map)return;
@@ -178,12 +178,12 @@ function listenMap(){
       const marker=L.marker([group.lat,group.lng],icon?{icon}:{}).addTo(mapLayer);visibleDrivers.forEach(d=>markers.set(d.uid,marker));
       if(!many){
         const d=visibleDrivers[0],name=safe(d.p.name||'Driver');
-        const actions=d.isMe?'<div class="online-word">YOUR SAVED LOCATION</div>':'<div class="popup-actions"><button type="button" class="popup-profile">View Profile</button><button type="button" class="popup-chat">Chat</button></div>';
-        marker.bindPopup(`<div class="map-popup"><b>1 driver at this location</b><div>${safe(d.p.city||'UAE')} · <span class="online-word">ONLINE</span></div><div><b>${name}</b></div>${actions}</div>`);
-        marker.on('popupopen',ev=>{const root=ev.popup.getElement();root.querySelector('.popup-profile')?.addEventListener('click',()=>viewProfile(d.uid));root.querySelector('.popup-chat')?.addEventListener('click',()=>startChat(d.uid,d.p.name||'Driver'))});
+        marker.bindPopup(`<div class="map-popup"><b>Driver Details</b><div><b>Name:</b> ${name}</div><div><b>About me:</b> ${safe(d.p.bio||'No description added.')}</div><div><b>Contact number:</b> ${safe(d.p.phone||'Not provided')}</div><div>${safe(d.p.city||'UAE')} · <span class="online-word">ONLINE</span></div><div class="popup-actions"><button type="button" class="popup-chat">Chat</button></div></div>`);
+        marker.on('popupopen',ev=>{const root=ev.popup.getElement();root.querySelector('.popup-chat')?.addEventListener('click',()=>startChat(d.uid,d.p.name||'Driver'))});
       }else{
-        marker.bindPopup(`<div class="cluster-popup"><b>${visibleDrivers.length} drivers at this location</b>${visibleDrivers.map(d=>`<div class="cluster-driver"><span><b>${d.isMe?'You':safe(d.p.name||'Driver')}</b><small>${safe(d.p.city||'UAE')} · ${safe(d.p.userId||'')}</small></span><span><button type="button" data-profile="${safe(d.uid)}">View Profile</button>${d.isMe?'':`<button type="button" data-chat="${safe(d.uid)}" data-name="${safe(d.p.name||'Driver')}">Chat</button>`}</span></div>`).join('')}</div>`);
-        marker.on('popupopen',ev=>{const root=ev.popup.getElement();root.querySelectorAll('[data-profile]').forEach(b=>b.addEventListener('click',()=>viewProfile(b.dataset.profile)));root.querySelectorAll('[data-chat]').forEach(b=>b.addEventListener('click',()=>startChat(b.dataset.chat,b.dataset.name||'Driver')))});
+        // A clustered pin first shows only the driver names. Selecting a name opens that driver's full profile.
+        marker.bindPopup(`<div class="cluster-popup"><b>${visibleDrivers.length} drivers at this location</b><small class="cluster-instruction">Select a driver to view details</small>${visibleDrivers.map(d=>`<button type="button" class="cluster-driver-name" data-profile="${safe(d.uid)}"><span class="cluster-avatar">${safe(initials(d.p.name||'Driver'))}</span><span class="cluster-name-copy"><b>${safe(d.p.name||'Driver')}</b><small>${safe(d.p.city||'UAE')} · ONLINE</small></span><span class="cluster-chevron">›</span></button>`).join('')}</div>`);
+        marker.on('popupopen',ev=>{const root=ev.popup.getElement();root.querySelectorAll('[data-profile]').forEach(b=>b.addEventListener('click',()=>viewProfile(b.dataset.profile)))});
       }
     });
     $('map-online-count').textContent=`${drivers.length} ${drivers.length===1?'driver':'drivers'}`;
