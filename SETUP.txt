@@ -1,7 +1,18 @@
-UPLOAD INSTRUCTIONS
+INSTALL
+1. Extract this ZIP.
+2. In the exact GitHub Pages folder serving your DriverLink website, replace:
+   - index.html
+   - css/main.css
+   - js/app.js
+3. Keep your existing js/firebase.js unchanged.
+4. Commit/push the changes and wait for GitHub Pages deployment.
+5. Open the website in a private/incognito tab or hard-refresh it.
+6. Allow Location permission when you tap Go Online.
 
-Upload the included index.html to the website root. Upload css/main.css and js/app.js to their existing folders. Do not replace or delete js/firebase.js.
-
-Firebase: compare firestore.rules with the rules currently published in Firebase Console. Publish the included rules only if your current rules do not already allow the publicProfiles phone field and the other listed profile fields.
-
-The mobile number is now included in publicProfiles as requested, so it is visible to signed-in DriverLink users. GPS coordinates are used only for the local blue dot and are not sent to Firestore. Saved Pin coordinates are stored in Firestore.
+TEST
+- Tap Go Online: the app should request GPS and save a Saved Pin at the current location.
+- A blue dot shows live GPS separately.
+- Tap Go Offline: blue dot stops/disappears; Saved Pin remains.
+- Drag the Saved Pin marker: it should move and save its new position.
+- Tap the Pin Point button, then tap another map location: it should save that point.
+- Other signed-in users should see the Saved Pin while this driver is Online.
