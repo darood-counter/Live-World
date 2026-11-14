@@ -38,7 +38,7 @@ function initMap(){
   if(map)return;
   const saved=profile.savedLocation;
   map=L.map('map',{zoomControl:false,preferCanvas:true}).setView(saved&&Number.isFinite(saved.lat)&&Number.isFinite(saved.lng)?[saved.lat,saved.lng]:[25.2048,55.2708],saved?14:12);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:20,attribution:'© OpenStreetMap contributors © CARTO'}).addTo(map);
   mapLayer=L.layerGroup().addTo(map);
   showOwnSavedPin();
 }
@@ -91,7 +91,7 @@ function locateWithGps(){
     }
   },gpsError,{enableHighAccuracy:true,maximumAge:0,timeout:15000});
 }
-async function reverseGeocode(lat,lng){try{const url=`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&zoom=18&addressdetails=1`;const response=await fetch(url,{headers:{'Accept':'application/json'}});if(!response.ok)return '';const data=await response.json();return data.display_name||'';}catch(_){return '';}}
+async function reverseGeocode(lat,lng){try{const url=`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&zoom=18&addressdetails=1&accept-language=en`;const response=await fetch(url,{headers:{'Accept':'application/json'}});if(!response.ok)return '';const data=await response.json();return data.display_name||'';}catch(_){return '';}}
 function startGpsWatch(){
   stopGpsWatch();
   if(!navigator.geolocation)return;
