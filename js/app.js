@@ -102,30 +102,44 @@ $('online-toggle').onclick=async()=>{
   const next=profile.onlineStatus==='online'?'offline':'online';
   const button=$('online-toggle');button.disabled=true;
   try{
+    let savedPin=profile.savedLocation||null;
+    // Every time the driver goes Online, replace the previous saved pin with
+    // the newly selected map-center position. Never use device GPS for this.
     if(next==='online'){
-      const loc=profile.savedLocation;
-      if(!loc||!Number.isFinite(loc.lat)||!Number.isFinite(loc.lng)){
-        showMapMessage('No Saved Pin Point yet. Stay Offline, move the map under the center pin, and tap Save Pin first.',true);
-        return;
-      }
+      if(!map)throw new Error('Map is not ready. Please wait and try again.');
+      const selectedPoint=map.getCenter();
+      if(!selectedPoint||!Number.isFinite(selectedPoint.lat)||!Number.isFinite(selectedPoint.lng))
+        throw new Error('The selected map location is not valid.');
+      await saveDriverLocation(selectedPoint.lat,selectedPoint.lng,'map',false);
+      savedPin=profile.savedLocation;
+      if(!savedPin||!Number.isFinite(savedPin.lat)||!Number.isFinite(savedPin.lng))
+        throw new Error('Could not save the new map location. Please try again.');
     }
     const batch=writeBatch(db);
-    batch.update(doc(db,'users',currentUser.uid),{onlineStatus:next,updatedAt:serverTimestamp()});
-    batch.set(doc(db,'publicProfiles',currentUser.uid),{uid:currentUser.uid,onlineStatus:next,updatedAt:serverTimestamp()},{merge:true});
+    if(next==='online'){
+      // Publish exactly the manually saved coordinates. GPS is used only for the blue dot.
+      batch.update(doc(db,'users',currentUser.uid),{onlineStatus:'online',savedLocation:savedPin,updatedAt:serverTimestamp()});
+      batch.set(doc(db,'publicProfiles',currentUser.uid),{uid:currentUser.uid,onlineStatus:'online',savedLocation:savedPin,updatedAt:serverTimestamp()},{merge:true});
+    }else{
+      batch.update(doc(db,'users',currentUser.uid),{onlineStatus:'offline',updatedAt:serverTimestamp()});
+      batch.set(doc(db,'publicProfiles',currentUser.uid),{uid:currentUser.uid,onlineStatus:'offline',updatedAt:serverTimestamp()},{merge:true});
+    }
     await batch.commit();
+    if(next==='online')profile.savedLocation=savedPin;
     profile.onlineStatus=next;updateOnlineUi();
     if(next==='offline'){
       stopGpsWatch();
-      if(gpsMarker){map.removeLayer(gpsMarker);gpsMarker=null;}
+      if(gpsMarker&&map){map.removeLayer(gpsMarker);gpsMarker=null;}
       showOwnSavedPin();
       updatePinModeUi();
       showMapMessage('You are Offline. Move the map under the fixed center pin, then tap Save Pin.');
     }else{
       showOwnSavedPin();
       updatePinModeUi();
+      // This watch updates only the blue GPS dot; it never writes to savedLocation or Firestore.
       startGpsWatch();
-      showMapMessage('You are Online. Your previously saved Pin Point is now visible to other drivers. Blue dot shows live GPS separately.');
-      if(map)map.setView([profile.savedLocation.lat,profile.savedLocation.lng],Math.max(map.getZoom(),14));
+      showMapMessage('You are Online. Your newly selected map location replaced the previous Saved Pin. Blue dot shows live GPS separately.');
+      if(map)map.setView([savedPin.lat,savedPin.lng],Math.max(map.getZoom(),14));
     }
   }catch(e){showMapMessage(errorText(e),true);console.error(e);}
   finally{button.disabled=false;}
