@@ -20,10 +20,11 @@
 <section id="app-view" class="hidden">
   <section id="map-page" class="page map-page">
     <div id="map" aria-label="Driver locations map"></div>
+    <div id="map-center-pin" class="map-center-pin" aria-hidden="true"><span></span></div>
     <div class="map-overlay-top"><span id="my-status" class="status-pill offline">OFFLINE</span><span id="map-online-count" class="count-pill">0 drivers online</span></div>
     <div class="map-controls" aria-label="Map controls">
       <button id="current-location" class="map-float-btn gps-button" type="button" aria-label="Show GPS current location" title="Current GPS location"><span aria-hidden="true">◎</span></button>
-      <button id="set-on-map" class="map-float-btn pin-button" type="button" aria-label="Choose and save a pin point" title="Pin point"><span aria-hidden="true">⌖</span></button>
+      <button id="set-on-map" class="map-float-btn pin-button" type="button" aria-label="Save the location at the map center" title="Save selected location"><span aria-hidden="true">⌖</span></button>
       <button id="find-drivers" class="map-float-btn people-button" type="button" aria-label="Find drivers" title="Find drivers"><span aria-hidden="true">♙</span></button>
     </div>
     <div id="map-message" class="map-message" role="status" aria-live="polite"></div>
