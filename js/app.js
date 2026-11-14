@@ -92,11 +92,6 @@ function locateWithGps(){
   },gpsError,{enableHighAccuracy:true,maximumAge:0,timeout:15000});
 }
 async function reverseGeocode(lat,lng){try{const url=`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&zoom=18&addressdetails=1`;const response=await fetch(url,{headers:{'Accept':'application/json'}});if(!response.ok)return '';const data=await response.json();return data.display_name||'';}catch(_){return '';}}
-function getCurrentGps(){return new Promise((resolve,reject)=>{
-  if(!navigator.geolocation)return reject(new Error('GPS is not supported by this browser.'));
-  if(!window.isSecureContext)return reject(new Error('GPS requires a secure HTTPS website.'));
-  navigator.geolocation.getCurrentPosition(pos=>resolve(pos.coords),err=>reject(new Error(({1:'Please allow location permission to use GPS.',2:'GPS location is unavailable. Check your device Location setting.',3:'GPS request timed out. Please try again.'})[err.code]||'Unable to get GPS location.')),{enableHighAccuracy:true,maximumAge:0,timeout:20000});
-});}
 function startGpsWatch(){
   stopGpsWatch();
   if(!navigator.geolocation)return;
@@ -108,10 +103,11 @@ $('online-toggle').onclick=async()=>{
   const button=$('online-toggle');button.disabled=true;
   try{
     if(next==='online'){
-      showMapMessage('Getting your current GPS location to create your Saved Pin…');
-      const coords=await getCurrentGps();
-      await saveDriverLocation(coords.latitude,coords.longitude,'gps');
-      setGpsDot(coords.latitude,coords.longitude,coords.accuracy);
+      const loc=profile.savedLocation;
+      if(!loc||!Number.isFinite(loc.lat)||!Number.isFinite(loc.lng)){
+        showMapMessage('No Saved Pin Point yet. Stay Offline, move the map under the center pin, and tap Save Pin first.',true);
+        return;
+      }
     }
     const batch=writeBatch(db);
     batch.update(doc(db,'users',currentUser.uid),{onlineStatus:next,updatedAt:serverTimestamp()});
@@ -128,7 +124,7 @@ $('online-toggle').onclick=async()=>{
       showOwnSavedPin();
       updatePinModeUi();
       startGpsWatch();
-      showMapMessage('You are Online. Your current GPS created the Saved Pin; the blue dot shows live GPS separately.');
+      showMapMessage('You are Online. Your previously saved Pin Point is now visible to other drivers. Blue dot shows live GPS separately.');
       if(map)map.setView([profile.savedLocation.lat,profile.savedLocation.lng],Math.max(map.getZoom(),14));
     }
   }catch(e){showMapMessage(errorText(e),true);console.error(e);}
