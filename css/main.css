@@ -29,7 +29,7 @@ main:has(#app-view:not(.hidden)){padding:0;max-width:none}
 .map-message.visible{opacity:1;transform:translateY(0)}
 .map-message.error{color:#a32626}
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
-.saved-pin-wrap,.gps-dot-wrap{background:transparent;border:0}
+.saved-pin-wrap,.gps-dot-wrap{background:transparent;border:0}.saved-pin-wrap{cursor:grab}.saved-pin-wrap:active{cursor:grabbing}
 .saved-pin-marker{width:30px;height:36px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#e44c42;border:3px solid #fff;box-shadow:0 2px 9px #0005;display:grid;place-items:center;color:#fff}
 .saved-pin-marker span{transform:rotate(45deg);font-size:18px;font-weight:900}
 .gps-dot-pulse{width:26px;height:26px;border-radius:50%;background:#168bf0a6;display:grid;place-items:center;animation:gpsPulse 1.8s ease-out infinite}
