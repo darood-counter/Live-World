@@ -24,7 +24,7 @@ function showApp(){
   $('user-chip').textContent=profile.name||currentUser.displayName||'Driver';$('user-chip').classList.remove('hidden');$('online-toggle').classList.remove('hidden');
   $('profile-name').value=profile.name||'';$('profile-bio').value=profile.bio||'';$('profile-phone').value=profile.phone||'';$('profile-city').value=profile.city||'Dubai';$('profile-userid').value=profile.userId||currentUser.uid.slice(0,8).toUpperCase();$('profile-avatar').textContent=initials(profile.name||'D');$('profile-summary-name').textContent=profile.name||'Driver';$('profile-summary-id').textContent=`Driver ID: ${profile.userId||currentUser.uid.slice(0,8).toUpperCase()}`;$('profile-summary-status').textContent=profile.onlineStatus==='online'?'ONLINE':'OFFLINE';$('profile-summary-status').className='status-pill '+(profile.onlineStatus==='online'?'online':'offline');
   profile.onlineStatus=profile.onlineStatus==='online'?'online':'offline';
-  updateOnlineUi();updateLocationHint();initMap();listenMap();listenChats();
+  updateOnlineUi();updateLocationHint();initMap();listenMap();listenChats();if(profile.onlineStatus==='online')startGpsWatch();
 }
 $('logout').onclick=async()=>{try{await signOut(auth)}catch(e){alert(errorText(e))}};
 document.querySelectorAll('.nav-btn[data-page]').forEach(b=>b.onclick=()=>{
@@ -40,7 +40,7 @@ function initMap(){
   map=L.map('map',{zoomControl:false,preferCanvas:true}).setView(saved&&Number.isFinite(saved.lat)&&Number.isFinite(saved.lng)?[saved.lat,saved.lng]:[25.2048,55.2708],saved?14:12);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
   mapLayer=L.layerGroup().addTo(map);
-  map.on('click',async e=>{if(!pinMode)return;pinMode=false;$('set-on-map').classList.remove('selected');try{await saveDriverLocation(e.latlng.lat,e.latlng.lng,'map');showMapMessage('Saved Pin updated on the map.')}catch(err){showMapMessage(errorText(err),true)}});
+  map.on('click',async e=>{if(!pinMode)return;pinMode=false;$('set-on-map').classList.remove('selected');map.getContainer().classList.remove('pin-mode');try{await saveDriverLocation(e.latlng.lat,e.latlng.lng,'map');showMapMessage('Saved Pin updated on the map.')}catch(err){showMapMessage(errorText(err),true)}});
   showOwnSavedPin();
 }
 function safe(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -57,9 +57,14 @@ function showOwnSavedPin(){
   if(ownSavedMarker){map.removeLayer(ownSavedMarker);ownSavedMarker=null;}
   const loc=profile.savedLocation;
   if(!loc||!Number.isFinite(loc.lat)||!Number.isFinite(loc.lng))return;
-  if(profile.onlineStatus==='online')return; // online pin is already shown from the public profile layer
   const icon=L.divIcon({className:'saved-pin-wrap',html:'<div class="saved-pin-marker"><span>⌖</span></div>',iconSize:[34,42],iconAnchor:[17,38]});
-  ownSavedMarker=L.marker([loc.lat,loc.lng],{icon,zIndexOffset:500}).addTo(map).bindPopup('<b>Your saved Pin Point</b><br><small>Only visible to you while Offline</small>');
+  ownSavedMarker=L.marker([loc.lat,loc.lng],{icon,zIndexOffset:800,draggable:true}).addTo(map);
+  ownSavedMarker.bindPopup('<b>Your Saved Pin Point</b><br><small>Drag this pin to adjust its location. Changes are saved automatically.</small>');
+  ownSavedMarker.on('dragend',async ev=>{
+    const point=ev.target.getLatLng();
+    try{await saveDriverLocation(point.lat,point.lng,'map',false);showMapMessage('Saved Pin moved and updated in Firebase.');}
+    catch(err){showMapMessage(errorText(err),true);showOwnSavedPin();}
+  });
 }
 function setGpsDot(lat,lng,accuracy){
   if(!map)return;
@@ -84,17 +89,26 @@ function locateWithGps(){
   },gpsError,{enableHighAccuracy:true,maximumAge:0,timeout:15000});
 }
 async function reverseGeocode(lat,lng){try{const url=`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&zoom=18&addressdetails=1`;const response=await fetch(url,{headers:{'Accept':'application/json'}});if(!response.ok)return '';const data=await response.json();return data.display_name||'';}catch(_){return '';}}
+function getCurrentGps(){return new Promise((resolve,reject)=>{
+  if(!navigator.geolocation)return reject(new Error('GPS is not supported by this browser.'));
+  if(!window.isSecureContext)return reject(new Error('GPS requires a secure HTTPS website.'));
+  navigator.geolocation.getCurrentPosition(pos=>resolve(pos.coords),err=>reject(new Error(({1:'Please allow location permission to use GPS.',2:'GPS location is unavailable. Check your device Location setting.',3:'GPS request timed out. Please try again.'})[err.code]||'Unable to get GPS location.')),{enableHighAccuracy:true,maximumAge:0,timeout:20000});
+});}
+function startGpsWatch(){
+  stopGpsWatch();
+  if(!navigator.geolocation)return;
+  gpsWatchId=navigator.geolocation.watchPosition(pos=>setGpsDot(pos.coords.latitude,pos.coords.longitude,pos.coords.accuracy),gpsError,{enableHighAccuracy:true,maximumAge:3000,timeout:20000});
+}
 $('online-toggle').onclick=async()=>{
   if(!currentUser)return;
   const next=profile.onlineStatus==='online'?'offline':'online';
   const button=$('online-toggle');button.disabled=true;
   try{
     if(next==='online'){
-      const loc=profile.savedLocation;
-      if(!loc||!Number.isFinite(loc.lat)||!Number.isFinite(loc.lng)){
-        showMapMessage('First save a Pin Point on the map before going Online.',true);
-        return;
-      }
+      showMapMessage('Getting your current GPS location to create your Saved Pin…');
+      const coords=await getCurrentGps();
+      await saveDriverLocation(coords.latitude,coords.longitude,'gps');
+      setGpsDot(coords.latitude,coords.longitude,coords.accuracy);
     }
     const batch=writeBatch(db);
     batch.update(doc(db,'users',currentUser.uid),{onlineStatus:next,updatedAt:serverTimestamp()});
@@ -105,25 +119,26 @@ $('online-toggle').onclick=async()=>{
       stopGpsWatch();
       if(gpsMarker){map.removeLayer(gpsMarker);gpsMarker=null;}
       showOwnSavedPin();
-      showMapMessage('You are Offline. Other drivers cannot see your Saved Pin.');
+      showMapMessage('You are Offline. Your Saved Pin remains on the map and can be dragged to adjust.');
     }else{
-      if(ownSavedMarker){map.removeLayer(ownSavedMarker);ownSavedMarker=null;}
-      showMapMessage('You are Online. Saved Pin is visible to drivers; GPS Dot is separate.');
+      showOwnSavedPin();
+      startGpsWatch();
+      showMapMessage('You are Online. Your current GPS created the Saved Pin; the blue dot shows live GPS separately.');
       if(map)map.setView([profile.savedLocation.lat,profile.savedLocation.lng],Math.max(map.getZoom(),14));
     }
-  }catch(e){$('share-status').textContent=errorText(e);console.error(e);}
+  }catch(e){showMapMessage(errorText(e),true);console.error(e);}
   finally{button.disabled=false;}
 };
-async function saveDriverLocation(lat,lng,source){
+async function saveDriverLocation(lat,lng,source,refreshMap=true){
   if(!currentUser)throw new Error('Please log in first.');
   if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat < -90||lat>90||lng < -180||lng>180)throw new Error('The selected map location is not valid.');
   const address=await reverseGeocode(lat,lng);
-  const savedLocation={lat,lng,address:address||'Selected map location',source:'map',updatedAt:serverTimestamp()};
+  const savedLocation={lat,lng,address:address||(source==='gps'?'Current GPS location':'Selected map location'),source:source==='gps'?'gps':'map',updatedAt:serverTimestamp()};
   const batch=writeBatch(db);
   batch.update(doc(db,'users',currentUser.uid),{savedLocation,updatedAt:serverTimestamp()});
   batch.set(doc(db,'publicProfiles',currentUser.uid),{uid:currentUser.uid,savedLocation,updatedAt:serverTimestamp()},{merge:true});
   await batch.commit();profile.savedLocation={...savedLocation,updatedAt:null};updateLocationHint();
-  if(map){if(profile.onlineStatus!=='online')showOwnSavedPin();map.setView([lat,lng],Math.max(map.getZoom(),14));}
+  if(map&&refreshMap){showOwnSavedPin();map.setView([lat,lng],Math.max(map.getZoom(),14));}
 }
 $('current-location').onclick=locateWithGps;
 $('set-on-map').onclick=()=>{pinMode=!pinMode;$('set-on-map').classList.toggle('selected',pinMode);showMapMessage(pinMode?'Move the map and tap your chosen point to save the Pin.':'Pin selection cancelled.');map?.getContainer().classList.toggle('pin-mode',pinMode)};
@@ -135,15 +150,17 @@ function listenMap(){
     snap.forEach(d=>{const p=d.data(),loc=p.savedLocation;if(p.onlineStatus!=='online'||!loc||typeof loc.lat!=='number'||typeof loc.lng!=='number')return;drivers.push({uid:d.id,p,lat:loc.lat,lng:loc.lng,isMe:d.id===currentUser.uid})});
     const groups=[];drivers.forEach(driver=>{let group=groups.find(g=>distanceMeters(g.lat,g.lng,driver.lat,driver.lng)<=75);if(!group){group={lat:driver.lat,lng:driver.lng,drivers:[]};groups.push(group)}group.drivers.push(driver)});
     groups.forEach(group=>{
-      const many=group.drivers.length>1;const icon=many?L.divIcon({className:'driver-cluster-wrap',html:`<div class="driver-cluster">${group.drivers.length}</div>`,iconSize:[42,42],iconAnchor:[21,21]}):undefined;
-      const marker=L.marker([group.lat,group.lng],icon?{icon}:{}).addTo(mapLayer);group.drivers.forEach(d=>markers.set(d.uid,marker));
+      const visibleDrivers=group.drivers.filter(d=>!d.isMe);
+      if(!visibleDrivers.length)return;
+      const many=visibleDrivers.length>1;const icon=many?L.divIcon({className:'driver-cluster-wrap',html:`<div class="driver-cluster">${group.drivers.length}</div>`,iconSize:[42,42],iconAnchor:[21,21]}):undefined;
+      const marker=L.marker([group.lat,group.lng],icon?{icon}:{}).addTo(mapLayer);visibleDrivers.forEach(d=>markers.set(d.uid,marker));
       if(!many){
-        const d=group.drivers[0],name=safe(d.p.name||'Driver');
+        const d=visibleDrivers[0],name=safe(d.p.name||'Driver');
         const actions=d.isMe?'<div class="online-word">YOUR SAVED LOCATION</div>':'<div class="popup-actions"><button type="button" class="popup-profile">View Profile</button><button type="button" class="popup-chat">Chat</button></div>';
         marker.bindPopup(`<div class="map-popup"><b>${d.isMe?'You':name}</b><div>${safe(d.p.city||'UAE')} · <span class="online-word">ONLINE</span></div>${actions}</div>`);
         marker.on('popupopen',ev=>{const root=ev.popup.getElement();root.querySelector('.popup-profile')?.addEventListener('click',()=>viewProfile(d.uid));root.querySelector('.popup-chat')?.addEventListener('click',()=>startChat(d.uid,d.p.name||'Driver'))});
       }else{
-        marker.bindPopup(`<div class="cluster-popup"><b>${group.drivers.length} drivers at this location</b>${group.drivers.map(d=>`<div class="cluster-driver"><span><b>${d.isMe?'You':safe(d.p.name||'Driver')}</b><small>${safe(d.p.city||'UAE')} · ${safe(d.p.userId||'')}</small></span><span><button type="button" data-profile="${safe(d.uid)}">View Profile</button>${d.isMe?'':`<button type="button" data-chat="${safe(d.uid)}" data-name="${safe(d.p.name||'Driver')}">Chat</button>`}</span></div>`).join('')}</div>`);
+        marker.bindPopup(`<div class="cluster-popup"><b>${visibleDrivers.length} drivers at this location</b>${visibleDrivers.map(d=>`<div class="cluster-driver"><span><b>${d.isMe?'You':safe(d.p.name||'Driver')}</b><small>${safe(d.p.city||'UAE')} · ${safe(d.p.userId||'')}</small></span><span><button type="button" data-profile="${safe(d.uid)}">View Profile</button>${d.isMe?'':`<button type="button" data-chat="${safe(d.uid)}" data-name="${safe(d.p.name||'Driver')}">Chat</button>`}</span></div>`).join('')}</div>`);
         marker.on('popupopen',ev=>{const root=ev.popup.getElement();root.querySelectorAll('[data-profile]').forEach(b=>b.addEventListener('click',()=>viewProfile(b.dataset.profile)));root.querySelectorAll('[data-chat]').forEach(b=>b.addEventListener('click',()=>startChat(b.dataset.chat,b.dataset.name||'Driver')))});
       }
     });
