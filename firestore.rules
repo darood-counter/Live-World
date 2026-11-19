@@ -64,7 +64,9 @@ service cloud.firestore {
         allow create: if isMember() && request.resource.data.senderUid == request.auth.uid &&
           request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 2000 &&
           request.resource.data.keys().hasOnly(['senderUid','text','createdAt']);
-        allow update, delete: if false;
+        allow update: if false;
+        // Any member may clear the shared conversation history.
+        allow delete: if isMember();
       }
     }
 
