@@ -1,6 +1,6 @@
 import {auth,db} from './firebase.js';
 import {createUserWithEmailAndPassword,signInWithEmailAndPassword,onAuthStateChanged,updateProfile,sendPasswordResetEmail,signOut,EmailAuthProvider,reauthenticateWithCredential,updatePassword,deleteUser} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
-import {doc,getDoc,setDoc,updateDoc,collection,query,where,orderBy,limit,getDocs,addDoc,onSnapshot,serverTimestamp,writeBatch,increment,runTransaction} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+import {doc,getDoc,setDoc,updateDoc,deleteDoc,collection,query,where,orderBy,limit,getDocs,addDoc,onSnapshot,serverTimestamp,writeBatch,increment,runTransaction} from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 const $=id=>document.getElementById(id);
 let currentUser=null,profile={},creatingAccount=false,map=null,mapLayer=null,chatUnsub=null,msgUnsub=null,presenceUnsub=null,activeChat=null,activeOther=null,markers=new Map(),loadedUid=null,pinMode=false,gpsWatchId=null,gpsMarker=null,ownSavedMarker=null;
@@ -21,19 +21,87 @@ $('forgot-button').onclick=async()=>{const email=$('login-email').value.trim();i
 
 async function loadUser(user){if(!user||loadedUid===user.uid)return;try{const snap=await getDoc(doc(db,'users',user.uid));if(!snap.exists()){await signOut(auth);msg('auth-message','Your driver profile is missing. Please create your account again or contact support.',true);return}currentUser=user;profile=snap.data();loadedUid=user.uid;showApp()}catch(e){showAuth();msg('auth-message',errorText(e),true)}}
 onAuthStateChanged(auth,async user=>{if(creatingAccount)return;if(!user){currentUser=null;loadedUid=null;showAuth();return}await loadUser(user)});
-function showAuth(){ dlRouteStack=[{page:'map-page',overlay:null,chat:false}];dlRouteInitialized=false;setAuthTab(false,false);clearSignupForm();if($('login-password'))$('login-password').value='';history.replaceState({driverLinkAuthTab:false},'','#login');stopGpsWatch();if(gpsMarker&&map){map.removeLayer(gpsMarker);gpsMarker=null;} $('auth-view').classList.remove('hidden');$('app-view').classList.add('hidden');$('user-chip').classList.add('hidden');$('online-toggle-map').classList.add('hidden');if(presenceUnsub){presenceUnsub();presenceUnsub=null}if(chatUnsub){chatUnsub();chatUnsub=null}if(msgUnsub){msgUnsub();msgUnsub=null}}
+function showAuth(){ dlRouteStack=[{page:'map-page',overlay:null,chat:false}];dlRouteInitialized=false;setAuthTab(false,false);clearSignupForm();if($('login-password'))$('login-password').value='';history.replaceState({driverLinkAuthTab:false},'','#login');stopGpsWatch();if(gpsMarker&&map){map.removeLayer(gpsMarker);gpsMarker=null;} $('auth-view').classList.remove('hidden');$('app-view').classList.add('hidden');$('user-chip').classList.add('hidden');$('header-logout').classList.add('hidden');$('online-toggle-map').classList.add('hidden');$('delete-account-modal').classList.add('hidden');if(presenceUnsub){presenceUnsub();presenceUnsub=null}if(chatUnsub){chatUnsub();chatUnsub=null}if(msgUnsub){msgUnsub();msgUnsub=null}}
 function showApp(){
   // Every successful login starts at the Map, with a clean in-app history.
   dlRouteStack=[{page:'map-page',overlay:null,chat:false}];
   dlRouteInitialized=true;
   history.replaceState({driverLink:true,depth:1},'','#map-page');
   $('auth-view').classList.add('hidden');$('app-view').classList.remove('hidden');
-  $('user-chip').textContent=profile.name||currentUser.displayName||'Driver';$('user-chip').classList.remove('hidden');$('online-toggle-map').classList.remove('hidden');
+  $('user-chip').textContent=profile.name||currentUser.displayName||'Driver';$('user-chip').classList.remove('hidden');$('header-logout').classList.remove('hidden');$('online-toggle-map').classList.remove('hidden');
   $('profile-name').value=profile.name||'';$('profile-userid').value=profile.userId||'';$('profile-shift').value=profile.shift||'day';$('profile-bio').value=profile.bio||'';$('profile-phone').value=profile.phone||'';$('profile-city').value=profile.city||'Dubai';$('profile-avatar').textContent=initials(profile.name||'D');$('profile-summary-name').textContent=profile.name||'Driver';$('profile-summary-status').textContent=profile.onlineStatus==='online'?'ONLINE':'OFFLINE';$('profile-summary-status').className='status-pill '+(profile.onlineStatus==='online'?'online':'offline');
   profile.onlineStatus=profile.onlineStatus==='online'?'online':'offline';
   updateOnlineUi();updateLocationHint();initMap();applyDlRoute(dlRouteStack[0]);updatePinModeUi();listenMap();listenChats();if(profile.onlineStatus==='online')startGpsWatch();
 }
-$('logout').onclick=async()=>{try{await signOut(auth)}catch(e){alert(errorText(e))}};
+
+async function logoutFromHeader(){try{await signOut(auth)}catch(e){alert(errorText(e))}}
+$('header-logout').onclick=logoutFromHeader;
+
+const deleteModal=$('delete-account-modal');
+$('open-delete-account').onclick=()=>{ $('delete-account-password').value='';msg('delete-account-message','');deleteModal.classList.remove('hidden');$('delete-account-password').focus(); };
+$('close-delete-account').onclick=()=>deleteModal.classList.add('hidden');
+deleteModal.addEventListener('click',e=>{if(e.target===deleteModal)deleteModal.classList.add('hidden')});
+
+async function deleteQueryDocs(q){
+  const snap=await getDocs(q);
+  for(let i=0;i<snap.docs.length;i+=400){
+    const batch=writeBatch(db);
+    snap.docs.slice(i,i+400).forEach(d=>batch.delete(d.ref));
+    await batch.commit();
+  }
+  return snap.size;
+}
+async function permanentlyDeleteAccount(password){
+  if(!currentUser||!currentUser.email)throw new Error('Please log in again before deleting this account.');
+  const credential=EmailAuthProvider.credential(currentUser.email,password);
+  await reauthenticateWithCredential(currentUser,credential);
+
+  // Remove this account's messages and chat documents before removing its profile.
+  const chatSnap=await getDocs(query(collection(db,'chats'),where('members','array-contains',currentUser.uid)));
+  for(const chatDoc of chatSnap.docs){
+    const messages=await getDocs(collection(db,'chats',chatDoc.id,'messages'));
+    for(let i=0;i<messages.docs.length;i+=400){
+      const batch=writeBatch(db);
+      messages.docs.slice(i,i+400).forEach(d=>batch.delete(d.ref));
+      await batch.commit();
+    }
+    await deleteDoc(chatDoc.ref);
+  }
+
+  await deleteQueryDocs(query(collection(db,'blocks'),where('ownerUid','==',currentUser.uid)));
+  await deleteQueryDocs(query(collection(db,'blocks'),where('blockedUid','==',currentUser.uid)));
+  await deleteQueryDocs(query(collection(db,'reports'),where('reporterUid','==',currentUser.uid)));
+
+  if(profile.userId){
+    const driverIdRef=doc(db,'driverIds',profile.userId);
+    const driverIdSnap=await getDoc(driverIdRef);
+    if(driverIdSnap.exists()&&driverIdSnap.data().uid===currentUser.uid)await deleteDoc(driverIdRef);
+  }
+  await deleteDoc(doc(db,'presence',currentUser.uid)).catch(e=>{if(e.code!=='not-found')throw e});
+  await deleteDoc(doc(db,'publicProfiles',currentUser.uid)).catch(e=>{if(e.code!=='not-found')throw e});
+  await deleteDoc(doc(db,'users',currentUser.uid));
+  await deleteUser(currentUser);
+}
+$('delete-account-form').onsubmit=async e=>{
+  e.preventDefault();
+  const password=$('delete-account-password').value;
+  if(!password)return msg('delete-account-message','Enter your current password.',true);
+  const confirmed=window.confirm('FINAL CONFIRMATION: Permanently delete your DriverLink account, profile, saved location and chat history? This cannot be undone.');
+  if(!confirmed)return;
+  const button=$('confirm-delete-account');
+  button.disabled=true;button.textContent='Deleting account…';
+  try{
+    await permanentlyDeleteAccount(password);
+    deleteModal.classList.add('hidden');
+    alert('Your DriverLink account and associated account data have been deleted.');
+  }catch(error){
+    msg('delete-account-message',errorText(error),true);
+  }finally{
+    button.disabled=false;button.textContent='Continue to confirmation';
+    $('delete-account-password').value='';
+  }
+};
+
 // Keep an in-app navigation stack so Android/browser Back moves through
 // DriverLink screens and overlays before leaving the site.
 let dlRouteStack=[{page:'map-page',overlay:null,chat:false}],dlRouteInitialized=false;
