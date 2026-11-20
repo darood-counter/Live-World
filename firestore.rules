@@ -24,7 +24,8 @@ service cloud.firestore {
       allow create: if signedIn() && request.resource.data.uid == request.auth.uid &&
         request.resource.data.userId == driverId &&
         request.resource.data.keys().hasOnly(['uid', 'userId', 'createdAt']);
-      allow update, delete: if false;
+      allow update: if false;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
 
     match /publicProfiles/{uid} {
@@ -56,7 +57,7 @@ service cloud.firestore {
       allow update: if signedIn() && request.auth.uid in resource.data.members &&
         request.resource.data.members == resource.data.members &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastMessage','updatedAt','memberNames','unreadCounts']);
-      allow delete: if false;
+      allow delete: if signedIn() && request.auth.uid in resource.data.members;
       match /messages/{messageId} {
         function isMember() { return signedIn() && exists(/databases/$(database)/documents/chats/$(chatId)) &&
           request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members; }
@@ -74,14 +75,16 @@ service cloud.firestore {
       allow read: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.blockedUid == request.auth.uid);
       allow create: if signedIn() && request.resource.data.ownerUid == request.auth.uid &&
         request.resource.data.blockedUid is string && request.resource.data.keys().hasOnly(['ownerUid','blockedUid','createdAt']);
-      allow update, delete: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      allow update: if signedIn() && resource.data.ownerUid == request.auth.uid;
+      allow delete: if signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.blockedUid == request.auth.uid);
     }
 
     match /reports/{reportId} {
       allow create: if signedIn() && request.resource.data.reporterUid == request.auth.uid &&
         request.resource.data.reason is string && request.resource.data.reason.size() > 0 && request.resource.data.reason.size() <= 500 &&
         request.resource.data.keys().hasOnly(['reporterUid','reportedUid','chatId','reason','createdAt','status']);
-      allow read, update, delete: if false;
+      allow read, update: if false;
+      allow delete: if signedIn() && resource.data.reporterUid == request.auth.uid;
     }
 
     match /{document=**} { allow read, write: if false; }
