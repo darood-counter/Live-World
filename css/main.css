@@ -199,3 +199,32 @@ button,input,select,textarea{touch-action:manipulation}
 }
 /* Keep the profile page focused; status now lives beside the name in the header. */
 .profile-summary{display:none!important}
+
+/* Signup compact layout and clear header presence indicator */
+#header-status{display:inline-block;width:10px;height:10px;min-width:10px;padding:0;border:0;border-radius:50%;font-size:0;line-height:0;vertical-align:middle;box-shadow:0 0 0 3px #ffffff20,0 1px 5px #0004}
+#header-status.online{background:#32df78;border:1px solid #b9ffd1}
+#header-status.offline{background:#ff6868;border:1px solid #ffd0d0}
+.header-right{gap:9px}
+@media(max-width:760px){
+  body.signup-active:has(#auth-view:not(.hidden)){overflow:hidden;height:100dvh}
+  body.signup-active #auth-view{height:calc(100dvh - 60px);padding:7px 10px 8px;display:flex;flex-direction:column;gap:5px;overflow:hidden}
+  body.signup-active #auth-view .hero{display:none}
+  body.signup-active #auth-view .auth-card{width:100%;flex:1;min-height:0;overflow:hidden;padding:8px 12px;border-radius:13px;display:flex;flex-direction:column}
+  body.signup-active #auth-view .tabs{margin-bottom:6px;flex:0 0 auto}
+  body.signup-active #signup-form{display:flex;flex-direction:column;gap:0;min-height:0}
+  body.signup-active #signup-form.hidden{display:none!important}
+  body.signup-active #signup-form>label{font-size:10.5px;line-height:1.1;margin:3px 0;color:#34483d}
+  body.signup-active #signup-form input,body.signup-active #signup-form select{height:34px;min-height:34px;padding:5px 9px;margin-top:2px;border-radius:8px;font-size:14px}
+  body.signup-active #signup-form .signup-id-hint{font-size:9px;line-height:1.1;margin:1px 0 2px}
+  body.signup-active #signup-form .check{display:flex;align-items:center;gap:7px;margin:5px 0 3px;font-size:10px;line-height:1.2}
+  body.signup-active #signup-form .check input{width:15px;height:15px;min-height:15px;margin:0;flex:0 0 15px}
+  body.signup-active #signup-form>.primary{height:36px;min-height:36px;margin-top:5px;padding:6px 12px;font-size:13px}
+  body.signup-active #auth-view .auth-card>.fine{display:none}
+  body.signup-active #auth-view #auth-message{font-size:10px;min-height:12px;margin:2px 0 0}
+}
+@media(max-height:700px) and (max-width:760px){
+  body.signup-active #signup-form>label{margin:2px 0;font-size:10px}
+  body.signup-active #signup-form input,body.signup-active #signup-form select{height:31px;min-height:31px;padding:4px 8px}
+  body.signup-active #signup-form .signup-id-hint{display:none}
+  body.signup-active #signup-form>.primary{height:33px;min-height:33px}
+}
