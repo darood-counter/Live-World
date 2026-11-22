@@ -301,7 +301,7 @@ function listenMap(){
     groups.forEach(group=>{
       const visibleDrivers=group.drivers.filter(d=>!d.isMe);
       if(!visibleDrivers.length)return;
-      const many=visibleDrivers.length>1;const icon=many?L.divIcon({className:'driver-cluster-wrap',html:`<div class="driver-group-marker"><svg viewBox="0 0 25 41" aria-hidden="true"><path d="M12.5 0C5.6 0 0 5.6 0 12.5c0 9.1 12.5 28.5 12.5 28.5S25 21.6 25 12.5C25 5.6 19.4 0 12.5 0z" fill="#2A81CB" stroke="#fff" stroke-width="1"/><circle cx="12.5" cy="12.5" r="4.2" fill="#fff"/></svg><span>${visibleDrivers.length}</span></div>`,iconSize:[42,52],iconAnchor:[21,48]}):undefined;
+      const many=visibleDrivers.length>1;const icon=many?L.divIcon({className:'driver-cluster-wrap',html:`<div class="driver-group-marker"><svg viewBox="0 0 25 41" aria-hidden="true"><path d="M12.5 0C5.6 0 0 5.6 0 12.5c0 9.1 12.5 28.5 12.5 28.5S25 21.6 25 12.5C25 5.6 19.4 0 12.5 0z" fill="#2A81CB" stroke="#fff" stroke-width="1"/><circle cx="12.5" cy="12.5" r="4.2" fill="#fff"/></svg><span>${visibleDrivers.length}</span></div>`,iconSize:[42,66],iconAnchor:[21,62]}):undefined;
       const marker=L.marker([group.lat,group.lng],icon?{icon}:{}).addTo(mapLayer);visibleDrivers.forEach(d=>markers.set(d.uid,marker));
       if(!many){
         const d=visibleDrivers[0],name=safe(d.p.name||'Driver');
