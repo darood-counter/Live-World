@@ -144,28 +144,28 @@ function initMap(){
   if(map)return;
   const saved=profile.savedLocation;
   map=L.map('map',{zoomControl:false,preferCanvas:true}).setView(saved&&Number.isFinite(saved.lat)&&Number.isFinite(saved.lng)?[saved.lat,saved.lng]:[25.2048,55.2708],saved?14:12);
-  // OpenStreetMap base layer: no API key required. If its public tile service
-  // cannot deliver tiles, switch once to CARTO's OSM-based light map.
+  // CARTO's light basemap is used so map labels render in Latin/English
+  // rather than following the device's Arabic locale. No API key is required.
   let tileErrors=0,fallbackStarted=false;
-  const osmTiles=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    subdomains:'abc',maxZoom:19,attribution:'© OpenStreetMap contributors',
+  const englishTiles=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+    subdomains:'abcd',maxZoom:20,attribution:'© OpenStreetMap contributors © CARTO',
     keepBuffer:3,updateWhenIdle:true
   });
-  osmTiles.on('tileerror',()=>{
+  englishTiles.on('tileerror',()=>{
     tileErrors++;
     if(tileErrors>=5&&!fallbackStarted){
       fallbackStarted=true;
-      map.removeLayer(osmTiles);
-      const lightTiles=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
+      map.removeLayer(englishTiles);
+      const backupTiles=L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
         subdomains:'abcd',maxZoom:20,attribution:'© OpenStreetMap contributors © CARTO',
         keepBuffer:3,updateWhenIdle:true
       });
-      lightTiles.on('tileerror',()=>showMapMessage('Map tiles could not load. Check your internet connection.',true));
-      lightTiles.addTo(map);
+      backupTiles.on('tileerror',()=>showMapMessage('Map tiles could not load. Check your internet connection.',true));
+      backupTiles.addTo(map);
       showMapMessage('Switching to the backup map…');
     }
   });
-  osmTiles.addTo(map);
+  englishTiles.addTo(map);
   mapLayer=L.layerGroup().addTo(map);
   showOwnSavedPin();
 }
@@ -192,7 +192,7 @@ function showOwnSavedPin(){
   if(ownSavedMarker){map.removeLayer(ownSavedMarker);ownSavedMarker=null;}
   const loc=profile.savedLocation;
   if(!loc||!Number.isFinite(loc.lat)||!Number.isFinite(loc.lng))return;
-  const icon=L.divIcon({className:'saved-pin-wrap',html:'<div class="saved-pin-marker"><span></span></div>',iconSize:[34,42],iconAnchor:[17,38]});
+  const icon=L.divIcon({className:'saved-pin-wrap',html:'<div class="saved-pin-marker"><span></span></div>',iconSize:[26,34],iconAnchor:[13,30]});
   ownSavedMarker=L.marker([loc.lat,loc.lng],{icon,zIndexOffset:800,draggable:false,keyboard:false}).addTo(map);
   ownSavedMarker.bindPopup(`<div class="map-popup"><b>Your Saved Pin Point</b><div><b>Name:</b> ${safe(profile.name||'Driver')}</div><div><b>Working in:</b> ${safe(shiftLabel(profile.shift))}</div><div><b>About me:</b> ${safe(profile.bio||'No description added.')}</div><div><b>Contact number:</b> ${safe(profile.phone||'Not provided')}</div><div>${safe(profile.city||'UAE')} · <span class="online-word">${profile.onlineStatus==='online'?'ONLINE':'OFFLINE'}</span></div><small>Fixed saved location. Go Offline to choose a new location.</small></div>`);
 }
@@ -301,7 +301,7 @@ function listenMap(){
     groups.forEach(group=>{
       const visibleDrivers=group.drivers.filter(d=>!d.isMe);
       if(!visibleDrivers.length)return;
-      const many=visibleDrivers.length>1;const icon=many?L.divIcon({className:'driver-cluster-wrap',html:`<div class="driver-cluster">${visibleDrivers.length}</div>`,iconSize:[42,42],iconAnchor:[21,21]}):undefined;
+      const many=visibleDrivers.length>1;const icon=many?L.divIcon({className:'driver-cluster-wrap',html:`<div class="driver-group-marker"><img src="https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png" alt=""><span>${visibleDrivers.length}</span></div>`,iconSize:[32,46],iconAnchor:[16,42]}):undefined;
       const marker=L.marker([group.lat,group.lng],icon?{icon}:{}).addTo(mapLayer);visibleDrivers.forEach(d=>markers.set(d.uid,marker));
       if(!many){
         const d=visibleDrivers[0],name=safe(d.p.name||'Driver');
