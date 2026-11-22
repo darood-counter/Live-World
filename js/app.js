@@ -144,28 +144,21 @@ function initMap(){
   if(map)return;
   const saved=profile.savedLocation;
   map=L.map('map',{zoomControl:false,preferCanvas:true}).setView(saved&&Number.isFinite(saved.lat)&&Number.isFinite(saved.lng)?[saved.lat,saved.lng]:[25.2048,55.2708],saved?14:12);
-  // CARTO's light basemap is used so map labels render in Latin/English
-  // rather than following the device's Arabic locale. No API key is required.
-  let tileErrors=0,fallbackStarted=false;
-  const englishTiles=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{
-    subdomains:'abcd',maxZoom:20,attribution:'© OpenStreetMap contributors © CARTO',
+  // Restore the previously working OpenStreetMap tile layer.
+  // It is key-free; do not fall back to CARTO, which now displays an API-key notice.
+  let tileErrors=0,errorShown=false;
+  const osmTiles=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    subdomains:'abc',maxZoom:19,attribution:'© OpenStreetMap contributors',
     keepBuffer:3,updateWhenIdle:true
   });
-  englishTiles.on('tileerror',()=>{
+  osmTiles.on('tileerror',()=>{
     tileErrors++;
-    if(tileErrors>=5&&!fallbackStarted){
-      fallbackStarted=true;
-      map.removeLayer(englishTiles);
-      const backupTiles=L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
-        subdomains:'abcd',maxZoom:20,attribution:'© OpenStreetMap contributors © CARTO',
-        keepBuffer:3,updateWhenIdle:true
-      });
-      backupTiles.on('tileerror',()=>showMapMessage('Map tiles could not load. Check your internet connection.',true));
-      backupTiles.addTo(map);
-      showMapMessage('Switching to the backup map…');
+    if(tileErrors>=5&&!errorShown){
+      errorShown=true;
+      showMapMessage('Map tiles could not load. Check your internet connection.',true);
     }
   });
-  englishTiles.addTo(map);
+  osmTiles.addTo(map);
   mapLayer=L.layerGroup().addTo(map);
   showOwnSavedPin();
 }
